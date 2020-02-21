@@ -47,7 +47,7 @@ use crate::filters::triangle::TriangleFilter;
 use crate::integrators::ao::AOIntegrator;
 use crate::integrators::bdpt::BDPTIntegrator;
 use crate::integrators::directlighting::{DirectLightingIntegrator, LightStrategy};
-// use crate::integrators::mlt::MLTIntegrator;
+use crate::integrators::mlt::MLTIntegrator;
 use crate::integrators::path::PathIntegrator;
 // use crate::integrators::sppm::SPPMIntegrator;
 // use crate::integrators::volpath::VolPathIntegrator;
@@ -353,32 +353,32 @@ impl RenderOptions {
                         light_strategy,
                     )));
                     some_integrator = Some(integrator);
-                // } else if self.integrator_name == "mlt" {
-                //     // CreateMLTIntegrator
-                //     let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
-                //     let n_bootstrap: i32 = self
-                //         .integrator_params
-                //         .find_one_int("bootstrapsamples", 100_000);
-                //     let n_chains: i32 = self.integrator_params.find_one_int("chains", 1000);
-                //     let mutations_per_pixel: i32 = self
-                //         .integrator_params
-                //         .find_one_int("mutationsperpixel", 100);
-                //     let large_step_probability: Float = self
-                //         .integrator_params
-                //         .find_one_float("largestepprobability", 0.3 as Float);
-                //     let sigma: Float = self
-                //         .integrator_params
-                //         .find_one_float("sigma", 0.01 as Float);
-                //     let integrator = Box::new(Integrator::MLT(MLTIntegrator::new(
-                //         camera,
-                //         max_depth as u32,
-                //         n_bootstrap as u32,
-                //         n_chains as u32,
-                //         mutations_per_pixel as u32,
-                //         sigma,
-                //         large_step_probability,
-                //     )));
-                //     some_integrator = Some(integrator);
+                } else if self.integrator_name == "mlt" {
+                    // CreateMLTIntegrator
+                    let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
+                    let n_bootstrap: i32 = self
+                        .integrator_params
+                        .find_one_int("bootstrapsamples", 100_000);
+                    let n_chains: i32 = self.integrator_params.find_one_int("chains", 1000);
+                    let mutations_per_pixel: i32 = self
+                        .integrator_params
+                        .find_one_int("mutationsperpixel", 100);
+                    let large_step_probability: Float = self
+                        .integrator_params
+                        .find_one_float("largestepprobability", 0.3 as Float);
+                    let sigma: Float = self
+                        .integrator_params
+                        .find_one_float("sigma", 0.01 as Float);
+                    let integrator = Box::new(Integrator::MLT(MLTIntegrator::new(
+                        camera,
+                        max_depth as u32,
+                        n_bootstrap as u32,
+                        n_chains as u32,
+                        mutations_per_pixel as u32,
+                        sigma,
+                        large_step_probability,
+                    )));
+                    some_integrator = Some(integrator);
                 } else if self.integrator_name == "ambientocclusion" {
                     // CreateAOIntegrator
                     let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
