@@ -41,7 +41,9 @@ impl Primitive {
             Primitive::Geometric(primitive) =>
             {
                 let hit_surface: bool = primitive.intersect(ray, isect);
-                isect.primitive = Some(self);
+                if hit_surface {
+                    isect.primitive = Some(self);
+                }
                 hit_surface
             }
             // Primitive::Transformed(primitive) => primitive.intersect(ray),
