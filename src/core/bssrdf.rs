@@ -27,417 +27,417 @@ use crate::core::reflection::{cos_theta, fr_dielectric};
 use crate::core::reflection::{Bsdf, Bxdf, BxdfType};
 use crate::core::scene::Scene;
 
-pub struct TabulatedBssrdf {
-    // BSSRDF Protected Data
-    pub po_p: Point3f,   // pub po: &SurfaceInteraction,
-    pub po_time: Float,  // TMP
-    pub po_wo: Vector3f, // TMP
-    pub eta: Float,
-    // SeparableBSSRDF Private Data
-    pub ns: Normal3f,
-    pub ss: Vector3f,
-    pub ts: Vector3f,
-    pub material: Arc<Material>,
-    pub mode: TransportMode,
-    // TabulatedBSSRDF Private Data
-    pub table: Arc<BssrdfTable>,
-    pub sigma_t: Spectrum,
-    pub rho: Spectrum,
-}
+// pub struct TabulatedBssrdf {
+//     // BSSRDF Protected Data
+//     pub po_p: Point3f,   // pub po: &SurfaceInteraction,
+//     pub po_time: Float,  // TMP
+//     pub po_wo: Vector3f, // TMP
+//     pub eta: Float,
+//     // SeparableBSSRDF Private Data
+//     pub ns: Normal3f,
+//     pub ss: Vector3f,
+//     pub ts: Vector3f,
+//     pub material: Arc<Material>,
+//     pub mode: TransportMode,
+//     // TabulatedBSSRDF Private Data
+//     pub table: Arc<BssrdfTable>,
+//     pub sigma_t: Spectrum,
+//     pub rho: Spectrum,
+// }
 
-impl TabulatedBssrdf {
-    pub fn new(
-        po: &SurfaceInteraction,
-        material_opt: Option<Arc<Material>>,
-        mode: TransportMode,
-        eta: Float,
-        sigma_a: &Spectrum,
-        sigma_s: &Spectrum,
-        table: Arc<BssrdfTable>,
-    ) -> Self {
-        let sigma_t: Spectrum = *sigma_a + *sigma_s;
-        let mut rho: Spectrum = Spectrum::new(0.0 as Float);
-        for c in 0..3 {
-            if sigma_t[c] != 0.0 as Float {
-                rho.c[c] = sigma_s[c] / sigma_t[c];
-            } else {
-                rho.c[c] = 0.0 as Float;
-            }
-        }
-        let ns: Normal3f = po.shading.n;
-        let ss: Vector3f = po.shading.dpdu.normalize();
-        if let Some(material) = material_opt {
-            TabulatedBssrdf {
-                po_p: po.p,
-                po_time: po.time,
-                po_wo: po.wo,
-                eta,
-                ns,
-                ss,
-                ts: nrm_cross_vec3(&ns, &ss),
-                material,
-                mode,
-                table,
-                sigma_t,
-                rho,
-            }
-        } else {
-            panic!("TabulatedBssrdf needs Material pointer")
-        }
-    }
-    pub fn sw(&self, w: &Vector3f) -> Spectrum {
-        let c: Float = 1.0 as Float - 2.0 as Float * fresnel_moment1(1.0 as Float / self.eta);
-        Spectrum::new(
-            (1.0 as Float - fr_dielectric(cos_theta(w), 1.0 as Float, self.eta)) / (c * PI),
-        )
-    }
-    pub fn sp(&self, pi: &SurfaceInteraction) -> Spectrum {
-        self.sr(pnt3_distance(&self.po_p, &pi.p))
-    }
-    pub fn pdf_sp(&self, pi: &SurfaceInteraction) -> Float {
-        // express $\pti-\pto$ and $\bold{n}_i$ with respect to local coordinates at $\pto$
-        let d: Vector3f = self.po_p - pi.p;
-        let d_local: Vector3f = Vector3f {
-            x: vec3_dot_vec3(&self.ss, &d),
-            y: vec3_dot_vec3(&self.ts, &d),
-            z: nrm_dot_vec3(&self.ns, &d),
-        };
-        let n_local: Normal3f = Normal3f {
-            x: vec3_dot_nrm(&self.ss, &pi.n),
-            y: vec3_dot_nrm(&self.ts, &pi.n),
-            z: nrm_dot_nrm(&self.ns, &pi.n),
-        };
-        // compute BSSRDF profile radius under projection along each axis
-        let r_proj: [Float; 3] = [
-            (d_local.y * d_local.y + d_local.z * d_local.z).sqrt(),
-            (d_local.z * d_local.z + d_local.x * d_local.x).sqrt(),
-            (d_local.x * d_local.x + d_local.y * d_local.y).sqrt(),
-        ];
-        // return combined probability from all BSSRDF sampling strategies
-        let mut pdf: Float = 0.0;
-        let axis_prob: [Float; 3] = [0.25 as Float, 0.25 as Float, 0.5 as Float];
-        let ch_prob: Float = 1.0 as Float / 3.0 as Float;
-        for axis in 0..3_usize {
-            for ch in 0..3_usize {
-                pdf += self.pdf_sr(ch, r_proj[axis])
-                    * n_local[axis as u8].abs()
-                    * ch_prob
-                    * axis_prob[axis];
-            }
-        }
-        pdf
-    }
-    fn sample_sp(
-        &self,
-        scene: &Scene,
-        u1: Float,
-        u2: Point2f,
-        pi: &mut SurfaceInteraction,
-        pdf: &mut Float,
-    ) -> Spectrum {
-        // ProfilePhase pp(Prof::BSSRDFEvaluation);
-        let mut u1: Float = u1; // shadowing input parameter
+// impl TabulatedBssrdf {
+//     pub fn new(
+//         po: &SurfaceInteraction,
+//         material_opt: Option<Arc<Material>>,
+//         mode: TransportMode,
+//         eta: Float,
+//         sigma_a: &Spectrum,
+//         sigma_s: &Spectrum,
+//         table: Arc<BssrdfTable>,
+//     ) -> Self {
+//         let sigma_t: Spectrum = *sigma_a + *sigma_s;
+//         let mut rho: Spectrum = Spectrum::new(0.0 as Float);
+//         for c in 0..3 {
+//             if sigma_t[c] != 0.0 as Float {
+//                 rho.c[c] = sigma_s[c] / sigma_t[c];
+//             } else {
+//                 rho.c[c] = 0.0 as Float;
+//             }
+//         }
+//         let ns: Normal3f = po.shading.n;
+//         let ss: Vector3f = po.shading.dpdu.normalize();
+//         if let Some(material) = material_opt {
+//             TabulatedBssrdf {
+//                 po_p: po.p,
+//                 po_time: po.time,
+//                 po_wo: po.wo,
+//                 eta,
+//                 ns,
+//                 ss,
+//                 ts: nrm_cross_vec3(&ns, &ss),
+//                 material,
+//                 mode,
+//                 table,
+//                 sigma_t,
+//                 rho,
+//             }
+//         } else {
+//             panic!("TabulatedBssrdf needs Material pointer")
+//         }
+//     }
+//     pub fn sw(&self, w: &Vector3f) -> Spectrum {
+//         let c: Float = 1.0 as Float - 2.0 as Float * fresnel_moment1(1.0 as Float / self.eta);
+//         Spectrum::new(
+//             (1.0 as Float - fr_dielectric(cos_theta(w), 1.0 as Float, self.eta)) / (c * PI),
+//         )
+//     }
+//     pub fn sp(&self, pi: &SurfaceInteraction) -> Spectrum {
+//         self.sr(pnt3_distance(&self.po_p, &pi.p))
+//     }
+//     pub fn pdf_sp(&self, pi: &SurfaceInteraction) -> Float {
+//         // express $\pti-\pto$ and $\bold{n}_i$ with respect to local coordinates at $\pto$
+//         let d: Vector3f = self.po_p - pi.p;
+//         let d_local: Vector3f = Vector3f {
+//             x: vec3_dot_vec3(&self.ss, &d),
+//             y: vec3_dot_vec3(&self.ts, &d),
+//             z: nrm_dot_vec3(&self.ns, &d),
+//         };
+//         let n_local: Normal3f = Normal3f {
+//             x: vec3_dot_nrm(&self.ss, &pi.n),
+//             y: vec3_dot_nrm(&self.ts, &pi.n),
+//             z: nrm_dot_nrm(&self.ns, &pi.n),
+//         };
+//         // compute BSSRDF profile radius under projection along each axis
+//         let r_proj: [Float; 3] = [
+//             (d_local.y * d_local.y + d_local.z * d_local.z).sqrt(),
+//             (d_local.z * d_local.z + d_local.x * d_local.x).sqrt(),
+//             (d_local.x * d_local.x + d_local.y * d_local.y).sqrt(),
+//         ];
+//         // return combined probability from all BSSRDF sampling strategies
+//         let mut pdf: Float = 0.0;
+//         let axis_prob: [Float; 3] = [0.25 as Float, 0.25 as Float, 0.5 as Float];
+//         let ch_prob: Float = 1.0 as Float / 3.0 as Float;
+//         for axis in 0..3_usize {
+//             for ch in 0..3_usize {
+//                 pdf += self.pdf_sr(ch, r_proj[axis])
+//                     * n_local[axis as u8].abs()
+//                     * ch_prob
+//                     * axis_prob[axis];
+//             }
+//         }
+//         pdf
+//     }
+//     fn sample_sp(
+//         &self,
+//         scene: &Scene,
+//         u1: Float,
+//         u2: Point2f,
+//         pi: &mut SurfaceInteraction,
+//         pdf: &mut Float,
+//     ) -> Spectrum {
+//         // ProfilePhase pp(Prof::BSSRDFEvaluation);
+//         let mut u1: Float = u1; // shadowing input parameter
 
-        // choose projection axis for BSSRDF sampling
-        let vx: Vector3f;
-        let vy: Vector3f;
-        let vz: Vector3f;
-        if u1 < 0.5 as Float {
-            vx = self.ss;
-            vy = self.ts;
-            vz = Vector3f::from(self.ns);
-            u1 *= 2.0 as Float;
-        } else if u1 < 0.75 as Float {
-            // prepare for sampling rays with respect to _self.ss_
-            vx = self.ts;
-            vy = Vector3f::from(self.ns);
-            vz = self.ss;
-            u1 = (u1 - 0.5 as Float) * 4.0 as Float;
-        } else {
-            // prepare for sampling rays with respect to _self.ts_
-            vx = Vector3f::from(self.ns);
-            vy = self.ss;
-            vz = self.ts;
-            u1 = (u1 - 0.75 as Float) * 4.0 as Float;
-        }
-        // choose spectral channel for BSSRDF sampling
-        let ch: usize = clamp_t((u1 * 3.0 as Float) as usize, 0_usize, 2_usize);
-        u1 = u1 * 3.0 as Float - ch as Float;
-        // sample BSSRDF profile in polar coordinates
-        let r: Float = self.sample_sr(ch, u2.x);
-        if r < 0.0 as Float {
-            return Spectrum::default();
-        }
-        let phi: Float = 2.0 as Float * PI * u2.y;
-        // compute BSSRDF profile bounds and intersection height
-        let r_max: Float = self.sample_sr(ch, 0.999 as Float);
-        if r >= r_max {
-            return Spectrum::default();
-        }
-        let l: Float = 2.0 as Float * (r_max * r_max - r * r).sqrt();
-        // compute BSSRDF sampling ray segment
-        let mut base: InteractionCommon = InteractionCommon::default();
-        base.p = self.po_p + (vx * phi.cos() + vy * phi.sin()) * r - vz * (l * 0.5 as Float);
-        base.time = self.po_time;
-        let p_target: Point3f = base.p + vz * l;
+//         // choose projection axis for BSSRDF sampling
+//         let vx: Vector3f;
+//         let vy: Vector3f;
+//         let vz: Vector3f;
+//         if u1 < 0.5 as Float {
+//             vx = self.ss;
+//             vy = self.ts;
+//             vz = Vector3f::from(self.ns);
+//             u1 *= 2.0 as Float;
+//         } else if u1 < 0.75 as Float {
+//             // prepare for sampling rays with respect to _self.ss_
+//             vx = self.ts;
+//             vy = Vector3f::from(self.ns);
+//             vz = self.ss;
+//             u1 = (u1 - 0.5 as Float) * 4.0 as Float;
+//         } else {
+//             // prepare for sampling rays with respect to _self.ts_
+//             vx = Vector3f::from(self.ns);
+//             vy = self.ss;
+//             vz = self.ts;
+//             u1 = (u1 - 0.75 as Float) * 4.0 as Float;
+//         }
+//         // choose spectral channel for BSSRDF sampling
+//         let ch: usize = clamp_t((u1 * 3.0 as Float) as usize, 0_usize, 2_usize);
+//         u1 = u1 * 3.0 as Float - ch as Float;
+//         // sample BSSRDF profile in polar coordinates
+//         let r: Float = self.sample_sr(ch, u2.x);
+//         if r < 0.0 as Float {
+//             return Spectrum::default();
+//         }
+//         let phi: Float = 2.0 as Float * PI * u2.y;
+//         // compute BSSRDF profile bounds and intersection height
+//         let r_max: Float = self.sample_sr(ch, 0.999 as Float);
+//         if r >= r_max {
+//             return Spectrum::default();
+//         }
+//         let l: Float = 2.0 as Float * (r_max * r_max - r * r).sqrt();
+//         // compute BSSRDF sampling ray segment
+//         let mut base: InteractionCommon = InteractionCommon::default();
+//         base.p = self.po_p + (vx * phi.cos() + vy * phi.sin()) * r - vz * (l * 0.5 as Float);
+//         base.time = self.po_time;
+//         let p_target: Point3f = base.p + vz * l;
 
-        // intersect BSSRDF sampling ray against the scene geometry
+//         // intersect BSSRDF sampling ray against the scene geometry
 
-        // declare _IntersectionChain_ and linked list
-        // struct IntersectionChain {
-        //     SurfaceInteraction si;
-        //     IntersectionChain *next = nullptr;
-        // };
-        // IntersectionChain *chain = ARENA_ALLOC(arena, IntersectionChain)();
+//         // declare _IntersectionChain_ and linked list
+//         // struct IntersectionChain {
+//         //     SurfaceInteraction si;
+//         //     IntersectionChain *next = nullptr;
+//         // };
+//         // IntersectionChain *chain = ARENA_ALLOC(arena, IntersectionChain)();
 
-        // accumulate chain of intersections along ray
-        // IntersectionChain *ptr = chain;
-        let mut chain: Vec<Rc<SurfaceInteraction>> = Vec::new();
-        let mut n_found: usize = 0;
-        loop {
-            let mut r: Ray = base.spawn_ray_to_pnt(&p_target);
-            if r.d == Vector3f::default() {
-                break;
-            }
-            if let Some(si) = scene.intersect(&mut r) {
-                // base = ptr->si;
-                base.p = si.p;
-                base.time = si.time;
-                base.p_error = si.p_error;
-                base.wo = si.wo;
-                base.n = si.n;
-                // TODO: si.medium_interface;
-                base.medium_interface = None;
-                // append admissible intersection to _IntersectionChain_
-                if let Some(geo_prim) = si.primitive {
-                    if let Some(material) = geo_prim.get_material() {
-                        //     if (ptr->si.primitive->GetMaterial() == this->material) {
-                        if Arc::ptr_eq(&material, &self.material) {
-                            //         IntersectionChain *next = ARENA_ALLOC(arena, IntersectionChain)();
-                            //         ptr->next = next;
-                            //         ptr = next;
-                            let si_eval: Rc<SurfaceInteraction> = si.clone();
-                            chain.push(si_eval);
-                            n_found += 1;
-                        }
-                    }
-                }
-            } else {
-                break;
-            }
-        }
+//         // accumulate chain of intersections along ray
+//         // IntersectionChain *ptr = chain;
+//         let mut chain: Vec<Rc<SurfaceInteraction>> = Vec::new();
+//         let mut n_found: usize = 0;
+//         loop {
+//             let mut r: Ray = base.spawn_ray_to_pnt(&p_target);
+//             if r.d == Vector3f::default() {
+//                 break;
+//             }
+//             if let Some(si) = scene.intersect(&mut r) {
+//                 // base = ptr->si;
+//                 base.p = si.p;
+//                 base.time = si.time;
+//                 base.p_error = si.p_error;
+//                 base.wo = si.wo;
+//                 base.n = si.n;
+//                 // TODO: si.medium_interface;
+//                 base.medium_interface = None;
+//                 // append admissible intersection to _IntersectionChain_
+//                 if let Some(geo_prim) = si.primitive {
+//                     if let Some(material) = geo_prim.get_material() {
+//                         //     if (ptr->si.primitive->GetMaterial() == this->material) {
+//                         if Arc::ptr_eq(&material, &self.material) {
+//                             //         IntersectionChain *next = ARENA_ALLOC(arena, IntersectionChain)();
+//                             //         ptr->next = next;
+//                             //         ptr = next;
+//                             let si_eval: Rc<SurfaceInteraction> = si.clone();
+//                             chain.push(si_eval);
+//                             n_found += 1;
+//                         }
+//                     }
+//                 }
+//             } else {
+//                 break;
+//             }
+//         }
 
-        // randomly choose one of several intersections during BSSRDF sampling
-        if n_found == 0_usize {
-            return Spectrum::default();
-        }
-        let selected: usize = clamp_t(
-            (u1 * n_found as Float) as usize,
-            0_usize,
-            (n_found - 1) as usize,
-        );
-        // while (selected-- > 0) chain = chain->next;
-        // *pi = chain->si;
-        let selected_si: &SurfaceInteraction = &chain[selected];
-        pi.p = selected_si.p;
-        pi.time = selected_si.time;
-        pi.p_error = selected_si.p_error;
-        pi.wo = selected_si.wo;
-        pi.n = selected_si.n;
-        if let Some(ref medium_interface) = selected_si.medium_interface {
-            pi.medium_interface = Some(medium_interface.clone());
-        } else {
-            pi.medium_interface = None;
-        }
-        pi.uv = selected_si.uv;
-        pi.dpdu = selected_si.dpdu;
-        pi.dpdv = selected_si.dpdv;
-        pi.dndu = selected_si.dndu;
-        pi.dndv = selected_si.dndv;
-        pi.dudx = Cell::new(selected_si.dudx.get());
-        pi.dvdx = Cell::new(selected_si.dvdx.get());
-        pi.dudy = Cell::new(selected_si.dudy.get());
-        pi.dvdy = Cell::new(selected_si.dvdy.get());
-        pi.dpdx = Cell::new(selected_si.dpdx.get());
-        pi.dpdy = Cell::new(selected_si.dpdy.get());
+//         // randomly choose one of several intersections during BSSRDF sampling
+//         if n_found == 0_usize {
+//             return Spectrum::default();
+//         }
+//         let selected: usize = clamp_t(
+//             (u1 * n_found as Float) as usize,
+//             0_usize,
+//             (n_found - 1) as usize,
+//         );
+//         // while (selected-- > 0) chain = chain->next;
+//         // *pi = chain->si;
+//         let selected_si: &SurfaceInteraction = &chain[selected];
+//         pi.p = selected_si.p;
+//         pi.time = selected_si.time;
+//         pi.p_error = selected_si.p_error;
+//         pi.wo = selected_si.wo;
+//         pi.n = selected_si.n;
+//         if let Some(ref medium_interface) = selected_si.medium_interface {
+//             pi.medium_interface = Some(medium_interface.clone());
+//         } else {
+//             pi.medium_interface = None;
+//         }
+//         pi.uv = selected_si.uv;
+//         pi.dpdu = selected_si.dpdu;
+//         pi.dpdv = selected_si.dpdv;
+//         pi.dndu = selected_si.dndu;
+//         pi.dndv = selected_si.dndv;
+//         pi.dudx = Cell::new(selected_si.dudx.get());
+//         pi.dvdx = Cell::new(selected_si.dvdx.get());
+//         pi.dudy = Cell::new(selected_si.dudy.get());
+//         pi.dvdy = Cell::new(selected_si.dvdy.get());
+//         pi.dpdx = Cell::new(selected_si.dpdx.get());
+//         pi.dpdy = Cell::new(selected_si.dpdy.get());
 
-        pi.shading = selected_si.shading;
-        // no primitive!
-        if let Some(bsdf) = &selected_si.bsdf {
-            pi.bsdf = Some(bsdf.clone());
-        } else {
-            pi.bsdf = None;
-        }
-        if let Some(bssrdf) = &selected_si.bssrdf {
-            pi.bssrdf = Some(bssrdf.clone());
-        } else {
-            pi.bssrdf = None;
-        }
-        // no shape!
-        // compute sample PDF and return the spatial BSSRDF term $\sp$
-        *pdf = self.pdf_sp(chain[selected].borrow()) / n_found as Float;
-        self.sp(chain[selected].borrow())
-    }
-    pub fn sr(&self, r: Float) -> Spectrum {
-        let mut sr: Spectrum = Spectrum::default();
-        for ch in 0..3_usize {
-            // convert $r$ into unitless optical radius $r_{\roman{optical}}$
-            let r_optical: Float = r * self.sigma_t.c[ch];
-            // compute spline weights to interpolate BSSRDF on channel _ch_
-            let mut rho_offset: i32 = 0;
-            let mut radius_offset: i32 = 0;
-            let mut rho_weights: [Float; 4] = [0.0 as Float; 4];
-            let mut radius_weights: [Float; 4] = [0.0 as Float; 4];
-            if !catmull_rom_weights(
-                &self.table.rho_samples,
-                self.rho.c[ch],
-                &mut rho_offset,
-                &mut rho_weights,
-            ) || !catmull_rom_weights(
-                &self.table.radius_samples,
-                r_optical,
-                &mut radius_offset,
-                &mut radius_weights,
-            ) {
-                continue;
-            }
-            // set BSSRDF value _Sr[ch]_ using tensor spline interpolation
-            let mut srf: Float = 0.0;
-            for (i, rho_weight) in rho_weights.iter().enumerate() {
-                for (j, radius_weight) in radius_weights.iter().enumerate() {
-                    let weight: Float = rho_weight * radius_weight;
-                    if weight != 0.0 as Float {
-                        srf += weight
-                            * self
-                                .table
-                                .eval_profile(rho_offset + i as i32, radius_offset + j as i32);
-                    }
-                }
-            }
-            // cancel marginal PDF factor from tabulated BSSRDF profile
-            if r_optical != 0.0 as Float {
-                srf /= 2.0 as Float * PI * r_optical;
-            }
-            sr.c[ch] = srf;
-        }
-        // transform BSSRDF value into world space units
-        sr *= self.sigma_t * self.sigma_t;
-        sr.clamp(0.0 as Float, std::f32::INFINITY as Float)
-    }
-    pub fn pdf_sr(&self, ch: usize, r: Float) -> Float {
-        // convert $r$ into unitless optical radius $r_{\roman{optical}}$
-        let r_optical: Float = r * self.sigma_t[ch];
-        // compute spline weights to interpolate BSSRDF density on channel _ch_
-        let mut rho_offset: i32 = 0;
-        let mut radius_offset: i32 = 0;
-        let mut rho_weights: [Float; 4] = [0.0 as Float; 4];
-        let mut radius_weights: [Float; 4] = [0.0 as Float; 4];
-        if !catmull_rom_weights(
-            &self.table.rho_samples,
-            self.rho.c[ch],
-            &mut rho_offset,
-            &mut rho_weights,
-        ) || !catmull_rom_weights(
-            &self.table.radius_samples,
-            r_optical,
-            &mut radius_offset,
-            &mut radius_weights,
-        ) {
-            return 0.0 as Float;
-        }
-        // return BSSRDF profile density for channel _ch_
-        let mut sr: Float = 0.0;
-        let mut rho_eff: Float = 0.0;
-        for (i, rho_weight) in rho_weights.iter().enumerate() {
-            if *rho_weight == 0.0 as Float {
-                continue;
-            }
-            rho_eff += self.table.rho_eff[rho_offset as usize + i] * rho_weight;
-            for (j, radius_weight) in radius_weights.iter().enumerate() {
-                if *radius_weight == 0.0 as Float {
-                    continue;
-                }
-                sr += self
-                    .table
-                    .eval_profile(rho_offset + i as i32, radius_offset + j as i32)
-                    * rho_weight
-                    * radius_weight;
-            }
-        }
-        // cancel marginal PDF factor from tabulated BSSRDF profile
-        if r_optical != 0.0 as Float {
-            sr /= 2.0 as Float * PI * r_optical;
-        }
-        (0.0 as Float).max(sr * self.sigma_t[ch] * self.sigma_t[ch] / rho_eff)
-    }
-    pub fn sample_sr(&self, ch: usize, u: Float) -> Float {
-        if self.sigma_t[ch] == 0.0 as Float {
-            return -1.0 as Float;
-        }
-        sample_catmull_rom_2d(
-            &self.table.rho_samples,
-            &self.table.radius_samples,
-            &self.table.profile,
-            &self.table.profile_cdf,
-            self.rho[ch],
-            u,
-            None,
-            None,
-        ) / self.sigma_t[ch]
-    }
-    // Bssrdf
-    pub fn s(&self, pi: &SurfaceInteraction, wi: &Vector3f) -> Spectrum {
-        // ProfilePhase pp(Prof::BSSRDFEvaluation);
-        let ft: Float = fr_dielectric(cos_theta(&self.po_wo), 1.0 as Float, self.eta);
-        self.sp(pi) * self.sw(wi) * (1.0 as Float - ft)
-    }
-    pub fn sample_s(
-        &self,
-        // the next three (extra) parameters are used for SeparableBssrdfAdapter
-        sc: TabulatedBssrdf,
-        mode: TransportMode,
-        eta: Float,
-        // done
-        scene: &Scene,
-        u1: Float,
-        u2: Point2f,
-        pdf: &mut Float,
-    ) -> (Spectrum, Option<SurfaceInteraction>) {
-        // ProfilePhase pp(Prof::BSSRDFSampling);
-        let mut si: SurfaceInteraction = SurfaceInteraction::default();
-        let sp: Spectrum = self.sample_sp(scene, u1, u2, &mut si, pdf);
-        if !sp.is_black() {
-            // initialize material model at sampled surface interaction
-            si.bsdf = Some(Bsdf::new(&si, 1.0));
-            if let Some(bsdf) = &mut si.bsdf {
-                bsdf.bxdfs[0] = Bxdf::Bssrdf(SeparableBssrdfAdapter::new(sc, mode, eta));
-            }
-            si.wo = Vector3f::from(si.shading.n);
-            (sp, Some(si))
-        } else {
-            (sp, None)
-        }
-    }
-}
+//         pi.shading = selected_si.shading;
+//         // no primitive!
+//         if let Some(bsdf) = &selected_si.bsdf {
+//             pi.bsdf = Some(bsdf.clone());
+//         } else {
+//             pi.bsdf = None;
+//         }
+//         if let Some(bssrdf) = &selected_si.bssrdf {
+//             pi.bssrdf = Some(bssrdf.clone());
+//         } else {
+//             pi.bssrdf = None;
+//         }
+//         // no shape!
+//         // compute sample PDF and return the spatial BSSRDF term $\sp$
+//         *pdf = self.pdf_sp(chain[selected].borrow()) / n_found as Float;
+//         self.sp(chain[selected].borrow())
+//     }
+//     pub fn sr(&self, r: Float) -> Spectrum {
+//         let mut sr: Spectrum = Spectrum::default();
+//         for ch in 0..3_usize {
+//             // convert $r$ into unitless optical radius $r_{\roman{optical}}$
+//             let r_optical: Float = r * self.sigma_t.c[ch];
+//             // compute spline weights to interpolate BSSRDF on channel _ch_
+//             let mut rho_offset: i32 = 0;
+//             let mut radius_offset: i32 = 0;
+//             let mut rho_weights: [Float; 4] = [0.0 as Float; 4];
+//             let mut radius_weights: [Float; 4] = [0.0 as Float; 4];
+//             if !catmull_rom_weights(
+//                 &self.table.rho_samples,
+//                 self.rho.c[ch],
+//                 &mut rho_offset,
+//                 &mut rho_weights,
+//             ) || !catmull_rom_weights(
+//                 &self.table.radius_samples,
+//                 r_optical,
+//                 &mut radius_offset,
+//                 &mut radius_weights,
+//             ) {
+//                 continue;
+//             }
+//             // set BSSRDF value _Sr[ch]_ using tensor spline interpolation
+//             let mut srf: Float = 0.0;
+//             for (i, rho_weight) in rho_weights.iter().enumerate() {
+//                 for (j, radius_weight) in radius_weights.iter().enumerate() {
+//                     let weight: Float = rho_weight * radius_weight;
+//                     if weight != 0.0 as Float {
+//                         srf += weight
+//                             * self
+//                                 .table
+//                                 .eval_profile(rho_offset + i as i32, radius_offset + j as i32);
+//                     }
+//                 }
+//             }
+//             // cancel marginal PDF factor from tabulated BSSRDF profile
+//             if r_optical != 0.0 as Float {
+//                 srf /= 2.0 as Float * PI * r_optical;
+//             }
+//             sr.c[ch] = srf;
+//         }
+//         // transform BSSRDF value into world space units
+//         sr *= self.sigma_t * self.sigma_t;
+//         sr.clamp(0.0 as Float, std::f32::INFINITY as Float)
+//     }
+//     pub fn pdf_sr(&self, ch: usize, r: Float) -> Float {
+//         // convert $r$ into unitless optical radius $r_{\roman{optical}}$
+//         let r_optical: Float = r * self.sigma_t[ch];
+//         // compute spline weights to interpolate BSSRDF density on channel _ch_
+//         let mut rho_offset: i32 = 0;
+//         let mut radius_offset: i32 = 0;
+//         let mut rho_weights: [Float; 4] = [0.0 as Float; 4];
+//         let mut radius_weights: [Float; 4] = [0.0 as Float; 4];
+//         if !catmull_rom_weights(
+//             &self.table.rho_samples,
+//             self.rho.c[ch],
+//             &mut rho_offset,
+//             &mut rho_weights,
+//         ) || !catmull_rom_weights(
+//             &self.table.radius_samples,
+//             r_optical,
+//             &mut radius_offset,
+//             &mut radius_weights,
+//         ) {
+//             return 0.0 as Float;
+//         }
+//         // return BSSRDF profile density for channel _ch_
+//         let mut sr: Float = 0.0;
+//         let mut rho_eff: Float = 0.0;
+//         for (i, rho_weight) in rho_weights.iter().enumerate() {
+//             if *rho_weight == 0.0 as Float {
+//                 continue;
+//             }
+//             rho_eff += self.table.rho_eff[rho_offset as usize + i] * rho_weight;
+//             for (j, radius_weight) in radius_weights.iter().enumerate() {
+//                 if *radius_weight == 0.0 as Float {
+//                     continue;
+//                 }
+//                 sr += self
+//                     .table
+//                     .eval_profile(rho_offset + i as i32, radius_offset + j as i32)
+//                     * rho_weight
+//                     * radius_weight;
+//             }
+//         }
+//         // cancel marginal PDF factor from tabulated BSSRDF profile
+//         if r_optical != 0.0 as Float {
+//             sr /= 2.0 as Float * PI * r_optical;
+//         }
+//         (0.0 as Float).max(sr * self.sigma_t[ch] * self.sigma_t[ch] / rho_eff)
+//     }
+//     pub fn sample_sr(&self, ch: usize, u: Float) -> Float {
+//         if self.sigma_t[ch] == 0.0 as Float {
+//             return -1.0 as Float;
+//         }
+//         sample_catmull_rom_2d(
+//             &self.table.rho_samples,
+//             &self.table.radius_samples,
+//             &self.table.profile,
+//             &self.table.profile_cdf,
+//             self.rho[ch],
+//             u,
+//             None,
+//             None,
+//         ) / self.sigma_t[ch]
+//     }
+//     // Bssrdf
+//     pub fn s(&self, pi: &SurfaceInteraction, wi: &Vector3f) -> Spectrum {
+//         // ProfilePhase pp(Prof::BSSRDFEvaluation);
+//         let ft: Float = fr_dielectric(cos_theta(&self.po_wo), 1.0 as Float, self.eta);
+//         self.sp(pi) * self.sw(wi) * (1.0 as Float - ft)
+//     }
+//     pub fn sample_s(
+//         &self,
+//         // the next three (extra) parameters are used for SeparableBssrdfAdapter
+//         sc: TabulatedBssrdf,
+//         mode: TransportMode,
+//         eta: Float,
+//         // done
+//         scene: &Scene,
+//         u1: Float,
+//         u2: Point2f,
+//         pdf: &mut Float,
+//     ) -> (Spectrum, Option<SurfaceInteraction>) {
+//         // ProfilePhase pp(Prof::BSSRDFSampling);
+//         let mut si: SurfaceInteraction = SurfaceInteraction::default();
+//         let sp: Spectrum = self.sample_sp(scene, u1, u2, &mut si, pdf);
+//         if !sp.is_black() {
+//             // initialize material model at sampled surface interaction
+//             si.bsdf = Some(Bsdf::new(&si, 1.0));
+//             if let Some(bsdf) = &mut si.bsdf {
+//                 bsdf.bxdfs[0] = Bxdf::Bssrdf(SeparableBssrdfAdapter::new(sc, mode, eta));
+//             }
+//             si.wo = Vector3f::from(si.shading.n);
+//             (sp, Some(si))
+//         } else {
+//             (sp, None)
+//         }
+//     }
+// }
 
-impl Clone for TabulatedBssrdf {
-    fn clone(&self) -> TabulatedBssrdf {
-        TabulatedBssrdf {
-            po_p: self.po_p,
-            po_time: self.po_time,
-            po_wo: self.po_wo,
-            eta: self.eta,
-            ns: self.ns,
-            ss: self.ss,
-            ts: self.ts,
-            material: self.material.clone(),
-            mode: self.mode,
-            table: self.table.clone(),
-            sigma_t: self.sigma_t,
-            rho: self.rho,
-        }
-    }
-}
+// impl Clone for TabulatedBssrdf {
+//     fn clone(&self) -> TabulatedBssrdf {
+//         TabulatedBssrdf {
+//             po_p: self.po_p,
+//             po_time: self.po_time,
+//             po_wo: self.po_wo,
+//             eta: self.eta,
+//             ns: self.ns,
+//             ss: self.ss,
+//             ts: self.ts,
+//             material: self.material.clone(),
+//             mode: self.mode,
+//             table: self.table.clone(),
+//             sigma_t: self.sigma_t,
+//             rho: self.rho,
+//         }
+//     }
+// }
 pub struct BssrdfTable {
     pub n_rho_samples: i32,
     pub n_radius_samples: i32,
@@ -472,44 +472,42 @@ impl BssrdfTable {
     }
 }
 
-pub struct SeparableBssrdfAdapter {
-    pub bssrdf: TabulatedBssrdf,
-    pub mode: TransportMode,
-    pub eta2: Float,
-}
+// pub struct SeparableBssrdfAdapter {
+//     pub bssrdf: TabulatedBssrdf,
+//     pub mode: TransportMode,
+//     pub eta2: Float,
+// }
 
-impl SeparableBssrdfAdapter {
-    pub fn new(bssrdf: TabulatedBssrdf, mode: TransportMode, eta: Float) -> Self {
-        SeparableBssrdfAdapter {
-            bssrdf,
-            mode,
-            eta2: eta * eta,
-        }
-    }
-    pub fn f(&self, _wo: &Vector3f, wi: &Vector3f) -> Spectrum {
-        let mut f: Spectrum = self.bssrdf.sw(wi);
-        // update BSSRDF transmission term to account for adjoint light transport
-        if self.mode == TransportMode::Radiance {
-            f *= Spectrum::new(self.eta2);
-        }
-        f
-    }
-    pub fn get_type(&self) -> u8 {
-        BxdfType::BsdfDiffuse as u8 | BxdfType::BsdfReflection as u8
-    }
-}
+// impl SeparableBssrdfAdapter {
+//     pub fn new(bssrdf: TabulatedBssrdf, mode: TransportMode, eta: Float) -> Self {
+//         SeparableBssrdfAdapter {
+//             bssrdf,
+//             mode,
+//             eta2: eta * eta,
+//         }
+//     }
+//     pub fn f(&self, _wo: &Vector3f, wi: &Vector3f) -> Spectrum {
+//         let mut f: Spectrum = self.bssrdf.sw(wi);
+//         // update BSSRDF transmission term to account for adjoint light transport
+//         if self.mode == TransportMode::Radiance {
+//             f *= Spectrum::new(self.eta2);
+//         }
+//         f
+//     }
+//     pub fn get_type(&self) -> u8 {
+//         BxdfType::BsdfDiffuse as u8 | BxdfType::BsdfReflection as u8
+//     }
+// }
 
-// impl Copy for SeparableBssrdfAdapter {}
-
-impl Clone for SeparableBssrdfAdapter {
-    fn clone(&self) -> SeparableBssrdfAdapter {
-        SeparableBssrdfAdapter {
-            bssrdf: self.bssrdf.clone(),
-            mode: self.mode,
-            eta2: self.eta2,
-        }
-    }
-}
+// impl Clone for SeparableBssrdfAdapter {
+//     fn clone(&self) -> SeparableBssrdfAdapter {
+//         SeparableBssrdfAdapter {
+//             bssrdf: self.bssrdf.clone(),
+//             mode: self.mode,
+//             eta2: self.eta2,
+//         }
+//     }
+// }
 
 pub fn fresnel_moment1(eta: Float) -> Float {
     let eta2: Float = eta * eta;
