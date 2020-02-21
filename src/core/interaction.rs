@@ -12,7 +12,7 @@ use std;
 use std::cell::Cell;
 use std::sync::Arc;
 // pbrt
-// use crate::core::bssrdf::TabulatedBssrdf;
+use crate::core::bssrdf::TabulatedBssrdf;
 use crate::core::geometry::{
     nrm_faceforward_nrm, pnt3_offset_ray_origin, vec3_cross_vec3, vec3_dot_nrm, vec3_dot_vec3,
 };
@@ -277,7 +277,7 @@ pub struct SurfaceInteraction<'a> {
     pub primitive: Option<*const Primitive>,
     pub shading: Shading,
     pub bsdf: Option<Bsdf>,
-    // pub bssrdf: Option<TabulatedBssrdf>,
+    pub bssrdf: Option<TabulatedBssrdf>,
     pub shape: Option<&'a Shape>,
 }
 
@@ -337,7 +337,7 @@ impl<'a> SurfaceInteraction<'a> {
                 primitive: None,
                 shading,
                 bsdf: None,
-                // bssrdf: None,
+                bssrdf: None,
                 shape: Some(shape.clone()),
             }
         } else {
@@ -362,7 +362,7 @@ impl<'a> SurfaceInteraction<'a> {
                 primitive: None,
                 shading,
                 bsdf: None,
-                // bssrdf: None,
+                bssrdf: None,
                 shape: None,
             }
         }

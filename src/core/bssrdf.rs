@@ -192,39 +192,41 @@ impl TabulatedBssrdf {
 
         // accumulate chain of intersections along ray
         // IntersectionChain *ptr = chain;
-        let mut chain: Vec<Rc<SurfaceInteraction>> = Vec::new();
+        let mut chain: Vec<SurfaceInteraction> = Vec::new();
         let mut n_found: usize = 0;
         loop {
             let mut r: Ray = base.spawn_ray_to_pnt(&p_target);
             if r.d == Vector3f::default() {
                 break;
             }
-            // if let Some(si) = scene.intersect(&mut r) {
-            //     // base = ptr->si;
-            //     base.p = si.p;
-            //     base.time = si.time;
-            //     base.p_error = si.p_error;
-            //     base.wo = si.wo;
-            //     base.n = si.n;
-            //     // TODO: si.medium_interface;
-            //     base.medium_interface = None;
-            //     // append admissible intersection to _IntersectionChain_
-            //     if let Some(geo_prim) = si.primitive {
-            //         if let Some(material) = geo_prim.get_material() {
-            //             //     if (ptr->si.primitive->GetMaterial() == this->material) {
-            //             if Arc::ptr_eq(&material, &self.material) {
-            //                 //         IntersectionChain *next = ARENA_ALLOC(arena, IntersectionChain)();
-            //                 //         ptr->next = next;
-            //                 //         ptr = next;
-            //                 let si_eval: Rc<SurfaceInteraction> = si.clone();
-            //                 chain.push(si_eval);
-            //                 n_found += 1;
-            //             }
-            //         }
-            //     }
-            // } else {
-            //     break;
-            // }
+            let mut si: SurfaceInteraction = SurfaceInteraction::default();
+            if scene.intersect(&mut r, &mut si) {
+                // base = ptr->si;
+                base.p = si.p;
+                base.time = si.time;
+                base.p_error = si.p_error;
+                base.wo = si.wo;
+                base.n = si.n;
+                // TODO: si.medium_interface;
+                base.medium_interface = None;
+                // append admissible intersection to _IntersectionChain_
+                if let Some(geo_prim_raw) = si.primitive {
+		    let geo_prim = unsafe { &*geo_prim_raw };
+                    if let Some(material) = geo_prim.get_material() {
+                        //     if (ptr->si.primitive->GetMaterial() == this->material) {
+                        if Arc::ptr_eq(&material, &self.material) {
+                            //         IntersectionChain *next = ARENA_ALLOC(arena, IntersectionChain)();
+                            //         ptr->next = next;
+                            //         ptr = next;
+                            let si_eval: SurfaceInteraction = si;
+                            chain.push(si_eval);
+                            n_found += 1;
+                        }
+                    }
+                }
+            } else {
+                break;
+            }
         }
 
         // randomly choose one of several intersections during BSSRDF sampling
@@ -268,11 +270,11 @@ impl TabulatedBssrdf {
         } else {
             pi.bsdf = None;
         }
-        // if let Some(bssrdf) = &selected_si.bssrdf {
-        //     pi.bssrdf = Some(bssrdf.clone());
-        // } else {
-        //     pi.bssrdf = None;
-        // }
+        if let Some(bssrdf) = &selected_si.bssrdf {
+            pi.bssrdf = Some(bssrdf.clone());
+        } else {
+            pi.bssrdf = None;
+        }
         // no shape!
         // compute sample PDF and return the spatial BSSRDF term $\sp$
         *pdf = self.pdf_sp(chain[selected].borrow()) / n_found as Float;
