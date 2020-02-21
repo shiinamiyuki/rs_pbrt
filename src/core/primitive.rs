@@ -38,15 +38,20 @@ impl Primitive {
     }
     pub fn intersect(&self, ray: &mut Ray, isect: &mut SurfaceInteraction) -> bool {
         match self {
-            Primitive::Geometric(primitive) => //{
-                // let isect_opt = 
-                primitive.intersect(ray, isect),
-                // if let Some(mut isect_rc) = isect_opt {
-                //     Rc::get_mut(&mut isect_rc).unwrap().primitive = Some(self);
-                //     Some(isect_rc)
-                // } else {
-                //     isect_opt
-                // }
+            Primitive::Geometric(primitive) =>
+            //{
+            // let isect_opt =
+            {
+                let hit_surface: bool = primitive.intersect(ray, isect);
+                // TODO: isect.primitive = Some(self);
+                hit_surface
+            }
+            // if let Some(mut isect_rc) = isect_opt {
+            //     Rc::get_mut(&mut isect_rc).unwrap().primitive = Some(self);
+            //     Some(isect_rc)
+            // } else {
+            //     isect_opt
+            // }
             // }
             // Primitive::Transformed(primitive) => primitive.intersect(ray),
             Primitive::BVH(primitive) => primitive.intersect(ray, isect),
@@ -159,7 +164,7 @@ impl GeometricPrimitive {
     pub fn intersect(&self, ray: &mut Ray, isect: &mut SurfaceInteraction) -> bool {
         let mut t_hit: Float = 0.0;
         if self.shape.intersect(ray, &mut t_hit, isect) {
-            // isect.primitive = Some(self);
+            // TODO: isect.primitive
             ray.t_max = t_hit;
             // let it: &SurfaceInteraction = isect_rc.borrow();
             assert!(nrm_dot_nrm(&isect.n, &isect.shading.n) >= 0.0 as Float);
@@ -167,13 +172,11 @@ impl GeometricPrimitive {
             // _Shape_ intersection
             if let Some(ref medium_interface) = self.medium_interface {
                 if medium_interface.is_medium_transition() {
-                    isect.medium_interface =
-                        Some(medium_interface.clone());
+                    isect.medium_interface = Some(medium_interface.clone());
                 } else if let Some(ref medium_arc) = ray.medium {
                     let inside: Option<Arc<Medium>> = Some(medium_arc.clone());
                     let outside: Option<Arc<Medium>> = Some(medium_arc.clone());
-                    isect.medium_interface =
-                        Some(Arc::new(MediumInterface::new(inside, outside)));
+                    isect.medium_interface = Some(Arc::new(MediumInterface::new(inside, outside)));
                 }
                 // print!("medium_interface = {{inside = ");
                 // if let Some(ref inside) = medium_interface.inside {
