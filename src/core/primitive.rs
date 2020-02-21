@@ -39,20 +39,11 @@ impl Primitive {
     pub fn intersect(&self, ray: &mut Ray, isect: &mut SurfaceInteraction) -> bool {
         match self {
             Primitive::Geometric(primitive) =>
-            //{
-            // let isect_opt =
             {
                 let hit_surface: bool = primitive.intersect(ray, isect);
                 isect.primitive = Some(self);
                 hit_surface
             }
-            // if let Some(mut isect_rc) = isect_opt {
-            //     Rc::get_mut(&mut isect_rc).unwrap().primitive = Some(self);
-            //     Some(isect_rc)
-            // } else {
-            //     isect_opt
-            // }
-            // }
             // Primitive::Transformed(primitive) => primitive.intersect(ray),
             Primitive::BVH(primitive) => primitive.intersect(ray, isect),
             // Primitive::KdTree(primitive) => primitive.intersect(ray),
