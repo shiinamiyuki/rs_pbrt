@@ -210,7 +210,8 @@ impl VisibilityTester {
             let mut isect: SurfaceInteraction = SurfaceInteraction::default();
             if scene.intersect(&mut ray, &mut isect) {
                 // handle opaque surface along ray's path
-                if let Some(primitive) = isect.primitive {
+                if let Some(primitive_raw) = isect.primitive {
+		    let primitive = unsafe { &*primitive_raw };
                     if let Some(_material) = primitive.get_material() {
                         return Spectrum::default();
                     } else {

@@ -43,7 +43,7 @@ impl Primitive {
             // let isect_opt =
             {
                 let hit_surface: bool = primitive.intersect(ray, isect);
-                // TODO: isect.primitive = Some(self);
+                isect.primitive = Some(self);
                 hit_surface
             }
             // if let Some(mut isect_rc) = isect_opt {

@@ -539,7 +539,8 @@ pub fn estimate_direct(
                 tr = tr_spectrum; // copy return value
                 if hit_surface {
                     found_surface_interaction = true;
-                    if let Some(primitive) = &light_isect.primitive {
+                    if let Some(primitive_raw) = light_isect.primitive {
+                        let primitive = unsafe { &*primitive_raw };
                         if let Some(area_light) = primitive.get_area_light() {
                             let pa = &*area_light as *const _ as *const usize;
                             let pl = &*light as *const _ as *const usize;
@@ -551,7 +552,8 @@ pub fn estimate_direct(
                 }
             } else if scene.intersect(&mut ray, &mut light_isect) {
                 found_surface_interaction = true;
-                if let Some(primitive) = &light_isect.primitive {
+                if let Some(primitive_raw) = light_isect.primitive {
+                    let primitive = unsafe { &*primitive_raw };
                     if let Some(area_light) = primitive.get_area_light() {
                         let pa = &*area_light as *const _ as *const usize;
                         let pl = &*light as *const _ as *const usize;

@@ -96,7 +96,8 @@ impl Scene {
             if !hit_surface {
                 return false;
             }
-            if let Some(ref primitive) = isect.primitive {
+            if let Some(primitive_raw) = isect.primitive {
+		let primitive = unsafe { &*primitive_raw };
                 if let Some(_material) = primitive.get_material() {
                     return true;
                 }
