@@ -81,13 +81,13 @@ use crate::samplers::sobol::SobolSampler;
 use crate::samplers::stratified::StratifiedSampler;
 use crate::samplers::zerotwosequence::ZeroTwoSequenceSampler;
 // use crate::shapes::curve::create_curve_shape;
-// use crate::shapes::cylinder::Cylinder;
-// use crate::shapes::disk::Disk;
-// use crate::shapes::loopsubdiv::loop_subdivide;
-// use crate::shapes::nurbs::nurbs_evaluate_surface;
-// use crate::shapes::nurbs::Homogeneous3;
-// use crate::shapes::plymesh::create_ply_mesh;
-// use crate::shapes::sphere::Sphere;
+use crate::shapes::cylinder::Cylinder;
+use crate::shapes::disk::Disk;
+use crate::shapes::loopsubdiv::loop_subdivide;
+use crate::shapes::nurbs::nurbs_evaluate_surface;
+use crate::shapes::nurbs::Homogeneous3;
+use crate::shapes::plymesh::create_ply_mesh;
+use crate::shapes::sphere::Sphere;
 use crate::shapes::triangle::{Triangle, TriangleMesh};
 use crate::textures::checkerboard::Checkerboard2DTexture;
 use crate::textures::constant::ConstantTexture;
@@ -1576,12 +1576,12 @@ pub fn make_accelerator(
             primitives.to_owned(),
             accelerator_params,
         )));
-    // } else if accelerator_name == "kdtree" {
-    //     // CreateKdTreeAccelerator
-    //     some_accelerator = Some(Arc::new(KdTreeAccel::create(
-    //         primitives.to_owned(),
-    //         accelerator_params,
-    //     )));
+        // } else if accelerator_name == "kdtree" {
+        //     // CreateKdTreeAccelerator
+        //     some_accelerator = Some(Arc::new(KdTreeAccel::create(
+        //         primitives.to_owned(),
+        //         accelerator_params,
+        //     )));
     }
     some_accelerator
 }
@@ -1738,64 +1738,64 @@ fn get_shapes_and_materials(
         }
     };
     // MakeShapes (api.cpp:296)
-    // if api_state.param_set.name == "sphere" {
-    //     // CreateSphereShape
-    //     let radius: Float = api_state.param_set.find_one_float("radius", 1.0 as Float);
-    //     let z_min: Float = api_state.param_set.find_one_float("zmin", -radius);
-    //     let z_max: Float = api_state.param_set.find_one_float("zmax", radius);
-    //     let phi_max: Float = api_state.param_set.find_one_float("phimax", 360.0 as Float);
-    //     let sphere = Arc::new(Shape::Sphr(Sphere::new(
-    //         obj_to_world,
-    //         world_to_obj,
-    //         false,
-    //         radius,
-    //         z_min,
-    //         z_max,
-    //         phi_max,
-    //     )));
-    //     let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
-    //     shapes.push(sphere);
-    //     materials.push(mtl);
-    // } else if api_state.param_set.name == "cylinder" {
-    //     let radius: Float = api_state.param_set.find_one_float("radius", 1.0);
-    //     let z_min: Float = api_state.param_set.find_one_float("zmin", -radius);
-    //     let z_max: Float = api_state.param_set.find_one_float("zmax", radius);
-    //     let phi_max: Float = api_state.param_set.find_one_float("phimax", 360.0 as Float);
-    //     let cylinder = Arc::new(Shape::Clndr(Cylinder::new(
-    //         obj_to_world,
-    //         world_to_obj,
-    //         false,
-    //         radius,
-    //         z_min,
-    //         z_max,
-    //         phi_max,
-    //     )));
-    //     let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
-    //     shapes.push(cylinder);
-    //     materials.push(mtl);
-    // } else if api_state.param_set.name == "disk" {
-    //     let height: Float = api_state.param_set.find_one_float("height", 0.0);
-    //     let radius: Float = api_state.param_set.find_one_float("radius", 1.0);
-    //     let inner_radius: Float = api_state.param_set.find_one_float("innerradius", 0.0);
-    //     let phi_max: Float = api_state.param_set.find_one_float("phimax", 360.0);
-    //     let disk = Arc::new(Shape::Dsk(Disk::new(
-    //         obj_to_world,
-    //         world_to_obj,
-    //         false,
-    //         height,
-    //         radius,
-    //         inner_radius,
-    //         phi_max,
-    //     )));
-    //     let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
-    //     shapes.push(disk);
-    //     materials.push(mtl);
-    // } else if api_state.param_set.name == "cone" {
-    //     println!("TODO: CreateConeShape");
-    // } else if api_state.param_set.name == "paraboloid" {
-    //     println!("TODO: CreateParaboloidShape");
-    // } else if api_state.param_set.name == "hyperboloid" {
-    //     println!("TODO: CreateHyperboloidShape");
+    if api_state.param_set.name == "sphere" {
+        // CreateSphereShape
+        let radius: Float = api_state.param_set.find_one_float("radius", 1.0 as Float);
+        let z_min: Float = api_state.param_set.find_one_float("zmin", -radius);
+        let z_max: Float = api_state.param_set.find_one_float("zmax", radius);
+        let phi_max: Float = api_state.param_set.find_one_float("phimax", 360.0 as Float);
+        let sphere = Arc::new(Shape::Sphr(Sphere::new(
+            obj_to_world,
+            world_to_obj,
+            false,
+            radius,
+            z_min,
+            z_max,
+            phi_max,
+        )));
+        let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
+        shapes.push(sphere);
+        materials.push(mtl);
+    } else if api_state.param_set.name == "cylinder" {
+        let radius: Float = api_state.param_set.find_one_float("radius", 1.0);
+        let z_min: Float = api_state.param_set.find_one_float("zmin", -radius);
+        let z_max: Float = api_state.param_set.find_one_float("zmax", radius);
+        let phi_max: Float = api_state.param_set.find_one_float("phimax", 360.0 as Float);
+        let cylinder = Arc::new(Shape::Clndr(Cylinder::new(
+            obj_to_world,
+            world_to_obj,
+            false,
+            radius,
+            z_min,
+            z_max,
+            phi_max,
+        )));
+        let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
+        shapes.push(cylinder);
+        materials.push(mtl);
+    } else if api_state.param_set.name == "disk" {
+        let height: Float = api_state.param_set.find_one_float("height", 0.0);
+        let radius: Float = api_state.param_set.find_one_float("radius", 1.0);
+        let inner_radius: Float = api_state.param_set.find_one_float("innerradius", 0.0);
+        let phi_max: Float = api_state.param_set.find_one_float("phimax", 360.0);
+        let disk = Arc::new(Shape::Dsk(Disk::new(
+            obj_to_world,
+            world_to_obj,
+            false,
+            height,
+            radius,
+            inner_radius,
+            phi_max,
+        )));
+        let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
+        shapes.push(disk);
+        materials.push(mtl);
+    } else if api_state.param_set.name == "cone" {
+        println!("TODO: CreateConeShape");
+    } else if api_state.param_set.name == "paraboloid" {
+        println!("TODO: CreateParaboloidShape");
+    } else if api_state.param_set.name == "hyperboloid" {
+        println!("TODO: CreateHyperboloidShape");
     // } else if api_state.param_set.name == "curve" {
     //     let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
     //     let curve_shapes: Vec<Arc<Shape>> = create_curve_shape(
@@ -1808,8 +1808,7 @@ fn get_shapes_and_materials(
     //         shapes.push(shape.clone());
     //         materials.push(mtl.clone());
     //     }
-    // } else 
-        if api_state.param_set.name == "trianglemesh" {
+    } else if api_state.param_set.name == "trianglemesh" {
         let vi = api_state.param_set.find_int("indices");
         let p = api_state.param_set.find_point3f("P");
         // try "uv" with Point2f
@@ -1909,252 +1908,252 @@ fn get_shapes_and_materials(
             shapes.push(triangle.clone());
             materials.push(mtl.clone());
         }
-    // } else if api_state.param_set.name == "plymesh" {
-    //     if let Some(ref search_directory) = api_state.search_directory {
-    //         let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
-    //         let ply_shapes: Vec<Arc<Shape>> = create_ply_mesh(
-    //             &obj_to_world,
-    //             &world_to_obj,
-    //             false, // reverse_orientation
-    //             &api_state.param_set,
-    //             api_state.graphics_state.float_textures.clone(),
-    //             // additional parameters:
-    //             Some(search_directory),
-    //         );
-    //         for shape in ply_shapes {
-    //             shapes.push(shape.clone());
-    //             materials.push(mtl.clone());
-    //         }
-    //     } else {
-    //         panic!("No search directory for plymesh.");
-    //     }
-    // } else if api_state.param_set.name == "heightfield" {
-    //     println!("TODO: CreateHeightfield");
-    // } else if api_state.param_set.name == "loopsubdiv" {
-    //     // CreateLoopSubdiv
-    //     let n_levels: i32 = api_state
-    //         .param_set
-    //         .find_one_int("levels", api_state.param_set.find_one_int("nlevels", 3));
-    //     // int nps, nIndices;
-    //     let vertex_indices: Vec<i32> = api_state.param_set.find_int("indices");
-    //     let p = api_state.param_set.find_point3f("P");
-    //     if vertex_indices.is_empty() {
-    //         panic!("Vertex indices \"indices\" not provided for LoopSubdiv shape.");
-    //     }
-    //     if p.is_empty() {
-    //         panic!("Vertex positions \"P\" not provided for LoopSubdiv shape.");
-    //     }
-    //     // don't actually use this for now...
-    //     let _scheme: String = api_state
-    //         .param_set
-    //         .find_one_string("scheme", String::from("loop"));
-    //     let mesh = loop_subdivide(
-    //         &obj_to_world,
-    //         &world_to_obj,
-    //         api_state.graphics_state.reverse_orientation,
-    //         n_levels,
-    //         &vertex_indices,
-    //         &p,
-    //     );
-    //     let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
-    //     for id in 0..mesh.n_triangles {
-    //         let triangle = Arc::new(Shape::Trngl(Triangle::new(
-    //             mesh.object_to_world,
-    //             mesh.world_to_object,
-    //             mesh.reverse_orientation,
-    //             mesh.clone(),
-    //             id.try_into().unwrap(),
-    //         )));
-    //         shapes.push(triangle.clone());
-    //         materials.push(mtl.clone());
-    //     }
-    // } else if api_state.param_set.name == "nurbs" {
-    //     // CreateNURBS
-    //     let nu: i32 = api_state.param_set.find_one_int("nu", -1);
-    //     if nu == -1_i32 {
-    //         panic!("Must provide number of control points \"nu\" with NURBS shape.");
-    //     }
-    //     let uorder: i32 = api_state.param_set.find_one_int("uorder", -1);
-    //     if uorder == -1_i32 {
-    //         panic!("Must provide u order \"uorder\" with NURBS shape.");
-    //     }
-    //     let uknots: Vec<Float> = api_state.param_set.find_float("uknots");
-    //     if uknots.is_empty() {
-    //         panic!("Must provide u knot vector \"uknots\" with NURBS shape.");
-    //     }
-    //     if uknots.len() != (nu + uorder) as usize {
-    //         panic!("Number of knots in u knot vector {} doesn't match sum of number of u control points {} and u order {}.",
-    //                uknots.len(), nu, uorder);
-    //     }
-    //     let u0: Float = api_state
-    //         .param_set
-    //         .find_one_float("u0", uknots[(uorder - 1) as usize]);
-    //     let u1: Float = api_state
-    //         .param_set
-    //         .find_one_float("u1", uknots[nu as usize]);
-    //     let nv: i32 = api_state.param_set.find_one_int("nv", -1);
-    //     if nv == -1_i32 {
-    //         panic!("Must provide number of control points \"nv\" with NURBS shape.");
-    //     }
-    //     let vorder: i32 = api_state.param_set.find_one_int("vorder", -1);
-    //     if vorder == -1_i32 {
-    //         panic!("Must provide u order \"vorder\" with NURBS shape.");
-    //     }
-    //     let vknots: Vec<Float> = api_state.param_set.find_float("vknots");
-    //     if vknots.is_empty() {
-    //         panic!("Must provide u knot vector \"vknots\" with NURBS shape.");
-    //     }
-    //     if vknots.len() != (nv + vorder) as usize {
-    //         panic!("Number of knots in v knot vector {} doesn't match sum of number of v control points {} and v order {}.",
-    //                vknots.len(), nv, vorder);
-    //     }
-    //     let v0: Float = api_state
-    //         .param_set
-    //         .find_one_float("v0", vknots[(vorder - 1) as usize]);
-    //     let v1: Float = api_state
-    //         .param_set
-    //         .find_one_float("v1", vknots[nv as usize]);
-    //     let mut is_homogeneous: bool = false;
-    //     let p: Vec<Point3f> = api_state.param_set.find_point3f("P");
-    //     let mut pw: Vec<Float> = Vec::new();
-    //     let mut npts: usize = p.len();
-    //     if p.is_empty() {
-    //         pw = api_state.param_set.find_float("Pw");
-    //         if pw.is_empty() {
-    //             panic!("Must provide control points via \"P\" or \"Pw\" parameter to NURBS shape.");
-    //         }
-    //         if pw.len() % 4 != 0 {
-    //             panic!("Number of \"Pw\" control points provided to NURBS shape must be multiple of four");
-    //         }
-    //         npts = pw.len() / 4_usize;
-    //         is_homogeneous = true;
-    //     }
-    //     if npts != (nu * nv) as usize {
-    //         panic!(
-    //             "NURBS shape was expecting {}x{}={} control points, was given {}",
-    //             nu,
-    //             nv,
-    //             nu * nv,
-    //             npts
-    //         );
-    //     }
-    //     // compute NURBS dicing rates
-    //     let diceu: usize = 30;
-    //     let dicev: usize = 30;
-    //     let mut ueval: Vec<Float> = Vec::with_capacity(diceu);
-    //     let mut veval: Vec<Float> = Vec::with_capacity(dicev);
-    //     let mut eval_ps: Vec<Point3f> = Vec::with_capacity(diceu * dicev);
-    //     let mut eval_ns: Vec<Normal3f> = Vec::with_capacity(diceu * dicev);
-    //     for i in 0..diceu {
-    //         ueval.push(lerp(i as Float / (diceu - 1) as Float, u0, u1));
-    //     }
-    //     for i in 0..dicev {
-    //         veval.push(lerp(i as Float / (dicev - 1) as Float, v0, v1));
-    //     }
-    //     // evaluate NURBS over grid of points
-    //     let mut uvs: Vec<Point2f> = Vec::with_capacity(diceu * dicev);
-    //     // turn NURBS into triangles
-    //     let mut hom3: Vec<Homogeneous3> = Vec::with_capacity((nu * nv) as usize);
-    //     if is_homogeneous {
-    //         for i in 0..(nu * nv) as usize {
-    //             hom3.push(Homogeneous3 {
-    //                 x: pw[4 * i],
-    //                 y: pw[4 * i + 1],
-    //                 z: pw[4 * i + 2],
-    //                 w: pw[4 * i + 3],
-    //             });
-    //         }
-    //     } else {
-    //         for item in p.iter().take((nu * nv) as usize) {
-    //             hom3.push(Homogeneous3 {
-    //                 x: item.x,
-    //                 y: item.y,
-    //                 z: item.z,
-    //                 w: 1.0 as Float,
-    //             });
-    //         }
-    //     }
-    //     for veval_item in veval.iter().take(dicev) {
-    //         for ueval_item in ueval.iter().take(diceu) {
-    //             uvs.push(Point2f {
-    //                 x: *ueval_item,
-    //                 y: *veval_item,
-    //             });
-    //             let mut dpdu: Vector3f = Vector3f::default();
-    //             let mut dpdv: Vector3f = Vector3f::default();
-    //             let pt: Point3f = nurbs_evaluate_surface(
-    //                 uorder,
-    //                 &uknots,
-    //                 nu,
-    //                 *ueval_item,
-    //                 vorder,
-    //                 &vknots,
-    //                 nv,
-    //                 *veval_item,
-    //                 &hom3,
-    //                 Some(&mut dpdu),
-    //                 Some(&mut dpdv),
-    //             );
-    //             eval_ps.push(Point3f {
-    //                 x: pt.x,
-    //                 y: pt.y,
-    //                 z: pt.z,
-    //             });
-    //             eval_ns.push(Normal3f::from(vec3_cross_vec3(&dpdu, &dpdv).normalize()));
-    //         }
-    //     }
-    //     // generate points-polygons mesh
-    //     let n_tris: usize = 2 * (diceu - 1) * (dicev - 1);
-    //     let mut vertices: Vec<u32> = Vec::with_capacity(3 * n_tris);
-    //     // compute the vertex offset numbers for the triangles
-    //     for v in 0_usize..(dicev - 1) as usize {
-    //         for u in 0_usize..(diceu - 1) as usize {
-    //             vertices.push((v * diceu + u).try_into().unwrap());
-    //             vertices.push((v * diceu + u + 1).try_into().unwrap());
-    //             vertices.push(((v + 1) * diceu + u + 1).try_into().unwrap());
-    //             vertices.push((v * diceu + u).try_into().unwrap());
-    //             vertices.push(((v + 1) * diceu + u + 1).try_into().unwrap());
-    //             vertices.push(((v + 1) * diceu + u).try_into().unwrap());
-    //         }
-    //     }
-    //     // transform mesh vertices to world space
-    //     let mut p_ws: Vec<Point3f> = Vec::new();
-    //     let n_vertices: usize = eval_ps.len();
-    //     for item in eval_ps.iter().take(n_vertices) {
-    //         p_ws.push(obj_to_world.transform_point(&item));
-    //     }
-    //     // transform normals to world space
-    //     let mut n_ws: Vec<Normal3f> = Vec::new();
-    //     let n_normals: usize = eval_ns.len();
-    //     for item in eval_ns.iter().take(n_normals) {
-    //         n_ws.push(obj_to_world.transform_normal(&item));
-    //     }
-    //     let mesh = Arc::new(TriangleMesh::new(
-    //         obj_to_world,
-    //         world_to_obj,
-    //         api_state.graphics_state.reverse_orientation,
-    //         n_tris.try_into().unwrap(), // n_triangles
-    //         vertices,
-    //         n_vertices.try_into().unwrap(),
-    //         p_ws,       // in world space
-    //         Vec::new(), // in world space
-    //         n_ws,       // in world space
-    //         uvs,
-    //         None,
-    //         None,
-    //     ));
-    //     let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
-    //     for id in 0..mesh.n_triangles {
-    //         let triangle = Arc::new(Shape::Trngl(Triangle::new(
-    //             mesh.object_to_world,
-    //             mesh.world_to_object,
-    //             mesh.reverse_orientation,
-    //             mesh.clone(),
-    //             id.try_into().unwrap(),
-    //         )));
-    //         shapes.push(triangle.clone());
-    //         materials.push(mtl.clone());
-    //     }
+    } else if api_state.param_set.name == "plymesh" {
+        if let Some(ref search_directory) = api_state.search_directory {
+            let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
+            let ply_shapes: Vec<Arc<Shape>> = create_ply_mesh(
+                &obj_to_world,
+                &world_to_obj,
+                false, // reverse_orientation
+                &api_state.param_set,
+                api_state.graphics_state.float_textures.clone(),
+                // additional parameters:
+                Some(search_directory),
+            );
+            for shape in ply_shapes {
+                shapes.push(shape.clone());
+                materials.push(mtl.clone());
+            }
+        } else {
+            panic!("No search directory for plymesh.");
+        }
+    } else if api_state.param_set.name == "heightfield" {
+        println!("TODO: CreateHeightfield");
+    } else if api_state.param_set.name == "loopsubdiv" {
+        // CreateLoopSubdiv
+        let n_levels: i32 = api_state
+            .param_set
+            .find_one_int("levels", api_state.param_set.find_one_int("nlevels", 3));
+        // int nps, nIndices;
+        let vertex_indices: Vec<i32> = api_state.param_set.find_int("indices");
+        let p = api_state.param_set.find_point3f("P");
+        if vertex_indices.is_empty() {
+            panic!("Vertex indices \"indices\" not provided for LoopSubdiv shape.");
+        }
+        if p.is_empty() {
+            panic!("Vertex positions \"P\" not provided for LoopSubdiv shape.");
+        }
+        // don't actually use this for now...
+        let _scheme: String = api_state
+            .param_set
+            .find_one_string("scheme", String::from("loop"));
+        let mesh = loop_subdivide(
+            &obj_to_world,
+            &world_to_obj,
+            api_state.graphics_state.reverse_orientation,
+            n_levels,
+            &vertex_indices,
+            &p,
+        );
+        let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
+        for id in 0..mesh.n_triangles {
+            let triangle = Arc::new(Shape::Trngl(Triangle::new(
+                mesh.object_to_world,
+                mesh.world_to_object,
+                mesh.reverse_orientation,
+                mesh.clone(),
+                id.try_into().unwrap(),
+            )));
+            shapes.push(triangle.clone());
+            materials.push(mtl.clone());
+        }
+    } else if api_state.param_set.name == "nurbs" {
+        // CreateNURBS
+        let nu: i32 = api_state.param_set.find_one_int("nu", -1);
+        if nu == -1_i32 {
+            panic!("Must provide number of control points \"nu\" with NURBS shape.");
+        }
+        let uorder: i32 = api_state.param_set.find_one_int("uorder", -1);
+        if uorder == -1_i32 {
+            panic!("Must provide u order \"uorder\" with NURBS shape.");
+        }
+        let uknots: Vec<Float> = api_state.param_set.find_float("uknots");
+        if uknots.is_empty() {
+            panic!("Must provide u knot vector \"uknots\" with NURBS shape.");
+        }
+        if uknots.len() != (nu + uorder) as usize {
+            panic!("Number of knots in u knot vector {} doesn't match sum of number of u control points {} and u order {}.",
+                   uknots.len(), nu, uorder);
+        }
+        let u0: Float = api_state
+            .param_set
+            .find_one_float("u0", uknots[(uorder - 1) as usize]);
+        let u1: Float = api_state
+            .param_set
+            .find_one_float("u1", uknots[nu as usize]);
+        let nv: i32 = api_state.param_set.find_one_int("nv", -1);
+        if nv == -1_i32 {
+            panic!("Must provide number of control points \"nv\" with NURBS shape.");
+        }
+        let vorder: i32 = api_state.param_set.find_one_int("vorder", -1);
+        if vorder == -1_i32 {
+            panic!("Must provide u order \"vorder\" with NURBS shape.");
+        }
+        let vknots: Vec<Float> = api_state.param_set.find_float("vknots");
+        if vknots.is_empty() {
+            panic!("Must provide u knot vector \"vknots\" with NURBS shape.");
+        }
+        if vknots.len() != (nv + vorder) as usize {
+            panic!("Number of knots in v knot vector {} doesn't match sum of number of v control points {} and v order {}.",
+                   vknots.len(), nv, vorder);
+        }
+        let v0: Float = api_state
+            .param_set
+            .find_one_float("v0", vknots[(vorder - 1) as usize]);
+        let v1: Float = api_state
+            .param_set
+            .find_one_float("v1", vknots[nv as usize]);
+        let mut is_homogeneous: bool = false;
+        let p: Vec<Point3f> = api_state.param_set.find_point3f("P");
+        let mut pw: Vec<Float> = Vec::new();
+        let mut npts: usize = p.len();
+        if p.is_empty() {
+            pw = api_state.param_set.find_float("Pw");
+            if pw.is_empty() {
+                panic!("Must provide control points via \"P\" or \"Pw\" parameter to NURBS shape.");
+            }
+            if pw.len() % 4 != 0 {
+                panic!("Number of \"Pw\" control points provided to NURBS shape must be multiple of four");
+            }
+            npts = pw.len() / 4_usize;
+            is_homogeneous = true;
+        }
+        if npts != (nu * nv) as usize {
+            panic!(
+                "NURBS shape was expecting {}x{}={} control points, was given {}",
+                nu,
+                nv,
+                nu * nv,
+                npts
+            );
+        }
+        // compute NURBS dicing rates
+        let diceu: usize = 30;
+        let dicev: usize = 30;
+        let mut ueval: Vec<Float> = Vec::with_capacity(diceu);
+        let mut veval: Vec<Float> = Vec::with_capacity(dicev);
+        let mut eval_ps: Vec<Point3f> = Vec::with_capacity(diceu * dicev);
+        let mut eval_ns: Vec<Normal3f> = Vec::with_capacity(diceu * dicev);
+        for i in 0..diceu {
+            ueval.push(lerp(i as Float / (diceu - 1) as Float, u0, u1));
+        }
+        for i in 0..dicev {
+            veval.push(lerp(i as Float / (dicev - 1) as Float, v0, v1));
+        }
+        // evaluate NURBS over grid of points
+        let mut uvs: Vec<Point2f> = Vec::with_capacity(diceu * dicev);
+        // turn NURBS into triangles
+        let mut hom3: Vec<Homogeneous3> = Vec::with_capacity((nu * nv) as usize);
+        if is_homogeneous {
+            for i in 0..(nu * nv) as usize {
+                hom3.push(Homogeneous3 {
+                    x: pw[4 * i],
+                    y: pw[4 * i + 1],
+                    z: pw[4 * i + 2],
+                    w: pw[4 * i + 3],
+                });
+            }
+        } else {
+            for item in p.iter().take((nu * nv) as usize) {
+                hom3.push(Homogeneous3 {
+                    x: item.x,
+                    y: item.y,
+                    z: item.z,
+                    w: 1.0 as Float,
+                });
+            }
+        }
+        for veval_item in veval.iter().take(dicev) {
+            for ueval_item in ueval.iter().take(diceu) {
+                uvs.push(Point2f {
+                    x: *ueval_item,
+                    y: *veval_item,
+                });
+                let mut dpdu: Vector3f = Vector3f::default();
+                let mut dpdv: Vector3f = Vector3f::default();
+                let pt: Point3f = nurbs_evaluate_surface(
+                    uorder,
+                    &uknots,
+                    nu,
+                    *ueval_item,
+                    vorder,
+                    &vknots,
+                    nv,
+                    *veval_item,
+                    &hom3,
+                    Some(&mut dpdu),
+                    Some(&mut dpdv),
+                );
+                eval_ps.push(Point3f {
+                    x: pt.x,
+                    y: pt.y,
+                    z: pt.z,
+                });
+                eval_ns.push(Normal3f::from(vec3_cross_vec3(&dpdu, &dpdv).normalize()));
+            }
+        }
+        // generate points-polygons mesh
+        let n_tris: usize = 2 * (diceu - 1) * (dicev - 1);
+        let mut vertices: Vec<u32> = Vec::with_capacity(3 * n_tris);
+        // compute the vertex offset numbers for the triangles
+        for v in 0_usize..(dicev - 1) as usize {
+            for u in 0_usize..(diceu - 1) as usize {
+                vertices.push((v * diceu + u).try_into().unwrap());
+                vertices.push((v * diceu + u + 1).try_into().unwrap());
+                vertices.push(((v + 1) * diceu + u + 1).try_into().unwrap());
+                vertices.push((v * diceu + u).try_into().unwrap());
+                vertices.push(((v + 1) * diceu + u + 1).try_into().unwrap());
+                vertices.push(((v + 1) * diceu + u).try_into().unwrap());
+            }
+        }
+        // transform mesh vertices to world space
+        let mut p_ws: Vec<Point3f> = Vec::new();
+        let n_vertices: usize = eval_ps.len();
+        for item in eval_ps.iter().take(n_vertices) {
+            p_ws.push(obj_to_world.transform_point(&item));
+        }
+        // transform normals to world space
+        let mut n_ws: Vec<Normal3f> = Vec::new();
+        let n_normals: usize = eval_ns.len();
+        for item in eval_ns.iter().take(n_normals) {
+            n_ws.push(obj_to_world.transform_normal(&item));
+        }
+        let mesh = Arc::new(TriangleMesh::new(
+            obj_to_world,
+            world_to_obj,
+            api_state.graphics_state.reverse_orientation,
+            n_tris.try_into().unwrap(), // n_triangles
+            vertices,
+            n_vertices.try_into().unwrap(),
+            p_ws,       // in world space
+            Vec::new(), // in world space
+            n_ws,       // in world space
+            uvs,
+            None,
+            None,
+        ));
+        let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
+        for id in 0..mesh.n_triangles {
+            let triangle = Arc::new(Shape::Trngl(Triangle::new(
+                mesh.object_to_world,
+                mesh.world_to_object,
+                mesh.reverse_orientation,
+                mesh.clone(),
+                id.try_into().unwrap(),
+            )));
+            shapes.push(triangle.clone());
+            materials.push(mtl.clone());
+        }
     } else {
         panic!("Shape \"{}\" unknown.", api_state.param_set.name);
     }
@@ -3003,10 +3002,10 @@ pub fn pbrt_object_instance(api_state: &mut ApiState, params: ParamSet) {
             &api_state.cur_transform.t[1],
             api_state.render_options.transform_end_time,
         );
-        // let prim: Arc<Primitive> = Arc::new(Primitive::Transformed(Box::new(
-        //     TransformedPrimitive::new(instance_vec[0].clone(), animated_instance_to_world),
-        // )));
-        // api_state.render_options.primitives.push(prim);
+    // let prim: Arc<Primitive> = Arc::new(Primitive::Transformed(Box::new(
+    //     TransformedPrimitive::new(instance_vec[0].clone(), animated_instance_to_world),
+    // )));
+    // api_state.render_options.primitives.push(prim);
     } else {
         println!(
             "ERROR: Unable to find instance named {:?}",

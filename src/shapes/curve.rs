@@ -365,7 +365,7 @@ impl Curve {
         // in C++: Bounds3f Shape::WorldBound() const { return (*ObjectToWorld)(ObjectBound()); }
         self.object_to_world.transform_bounds(&self.object_bound())
     }
-    pub fn intersect(&self, r: &Ray) -> Option<(Rc<SurfaceInteraction>, Float)> {
+    pub fn intersect(&self, r: &Ray, t_hit: &mut Float, isect: &mut SurfaceInteraction) -> bool {
         // TODO: ProfilePhase p(isect ? Prof::CurveIntersect : Prof::CurveIntersectP);
         // TODO: ++nTests;
         // transform _Ray_ to object space
@@ -427,7 +427,7 @@ impl Curve {
             || cp[0].y.min(cp[1].y).min(cp[2].y.min(cp[3].y)) - 0.5 as Float * max_width
                 > 0.0 as Float
         {
-            return None;
+            return false;
         }
 
         // check for non-overlap in x.
@@ -435,7 +435,7 @@ impl Curve {
             || cp[0].x.min(cp[1].x).min(cp[2].x.min(cp[3].x)) - 0.5 as Float * max_width
                 > 0.0 as Float
         {
-            return None;
+            return false;
         }
 
         // check for non-overlap in z.
@@ -444,7 +444,7 @@ impl Curve {
         if cp[0].z.max(cp[1].z).max(cp[2].z.max(cp[3].z)) + 0.5 as Float * max_width < 0.0 as Float
             || cp[0].z.min(cp[1].z).min(cp[2].z.min(cp[3].z)) - 0.5 as Float * max_width > z_max
         {
-            return None;
+            return false;
         }
 
         // compute refinement depth for curve, _maxDepth_
