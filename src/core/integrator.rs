@@ -3,6 +3,7 @@
 
 // std
 use std;
+use std::rc::Rc;
 use std::sync::Arc;
 // pbrt
 use crate::blockqueue::BlockQueue;
@@ -531,7 +532,7 @@ pub fn estimate_direct(
             let mut found_surface_interaction: bool = false;
             // add light contribution from material sampling
             let mut li: Spectrum = Spectrum::default();
-            let mut light_isect: SurfaceInteraction = SurfaceInteraction::default();
+            let mut light_isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
             let mut tr_spectrum: Spectrum = Spectrum::default();
             if handle_media {
                 let hit_surface: bool =

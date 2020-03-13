@@ -91,7 +91,7 @@ impl PathIntegrator {
             // println!("Path tracer bounce {:?}, current L = {:?}, beta = {:?}",
             //          bounces, l, beta);
             // intersect _ray_ with scene and store intersection in _isect_
-            let mut isect: SurfaceInteraction = SurfaceInteraction::default();
+            let mut isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
             if scene.intersect(&mut ray, &mut isect) {
                 // possibly add emitted light at intersection
                 if bounces == 0 || specular_bounce {
@@ -105,7 +105,9 @@ impl PathIntegrator {
                 }
                 // compute scattering functions and skip over medium boundaries
                 let mode: TransportMode = TransportMode::Radiance;
-                isect.compute_scattering_functions(&ray, true, mode);
+                if let Some(si) = Rc::get_mut(&mut isect) {
+                    si.compute_scattering_functions(&ray, true, mode);
+                }
                 if let Some(ref _bsdf) = isect.bsdf {
                     // we are fine (for below)
                 } else {

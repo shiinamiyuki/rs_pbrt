@@ -3,6 +3,7 @@
 //! to the camera sensor.
 
 // std
+use std::rc::Rc;
 use std::sync::Arc;
 // pbrt
 use crate::core::geometry::{Normal3f, Point2f, Ray, Vector3f};
@@ -207,11 +208,11 @@ impl VisibilityTester {
         loop {
             let mut it: InteractionCommon = InteractionCommon::default();
             let mut medium_interface: Option<Arc<MediumInterface>> = None;
-            let mut isect: SurfaceInteraction = SurfaceInteraction::default();
+            let mut isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
             if scene.intersect(&mut ray, &mut isect) {
                 // handle opaque surface along ray's path
                 if let Some(primitive_raw) = isect.primitive {
-		    let primitive = unsafe { &*primitive_raw };
+                    let primitive = unsafe { &*primitive_raw };
                     if let Some(_material) = primitive.get_material() {
                         return Spectrum::default();
                     } else {

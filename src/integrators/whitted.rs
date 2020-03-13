@@ -50,7 +50,7 @@ impl WhittedIntegrator {
     ) -> Spectrum {
         let mut l: Spectrum = Spectrum::default();
         // find closest ray intersection or return background radiance
-        let mut isect: SurfaceInteraction = SurfaceInteraction::default();
+        let mut isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
         if scene.intersect(ray, &mut isect) {
             // compute emitted and reflected light at ray intersection point
 
@@ -60,7 +60,9 @@ impl WhittedIntegrator {
 
             // compute scattering functions for surface interaction
             let mode: TransportMode = TransportMode::Radiance;
-            isect.compute_scattering_functions(ray, false, mode);
+            if let Some(si) = Rc::get_mut(&mut isect) {
+                si.compute_scattering_functions(ray, false, mode);
+            }
             // if (!isect.bsdf)
             if let Some(ref _bsdf) = isect.bsdf {
             } else {

@@ -48,7 +48,12 @@ impl Shape {
             Shape::Trngl(shape) => shape.world_bound(),
         }
     }
-    pub fn intersect(&self, r: &Ray, t_hit: &mut Float, isect: &mut SurfaceInteraction) -> bool {
+    pub fn intersect(
+        &self,
+        r: &Ray,
+        t_hit: &mut Float,
+        isect: &mut Rc<SurfaceInteraction>,
+    ) -> bool {
         match self {
             // Shape::Crv(shape) => shape.intersect(r, t_hit, isect),
             Shape::Clndr(shape) => shape.intersect(r, t_hit, isect),

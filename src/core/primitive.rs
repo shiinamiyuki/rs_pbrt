@@ -36,13 +36,14 @@ impl Primitive {
             // Primitive::KdTree(primitive) => primitive.world_bound(),
         }
     }
-    pub fn intersect(&self, ray: &mut Ray, isect: &mut SurfaceInteraction) -> bool {
+    pub fn intersect(&self, ray: &mut Ray, isect: &mut Rc<SurfaceInteraction>) -> bool {
         match self {
-            Primitive::Geometric(primitive) =>
-            {
+            Primitive::Geometric(primitive) => {
                 let hit_surface: bool = primitive.intersect(ray, isect);
                 if hit_surface {
-                    isect.primitive = Some(self);
+                    if let Some(si) = Rc::get_mut(isect) {
+                        si.primitive = Some(self);
+                    }
                 }
                 hit_surface
             }
@@ -154,7 +155,7 @@ impl GeometricPrimitive {
     pub fn world_bound(&self) -> Bounds3f {
         self.shape.world_bound()
     }
-    pub fn intersect(&self, ray: &mut Ray, isect: &mut SurfaceInteraction) -> bool {
+    pub fn intersect(&self, ray: &mut Ray, isect: &mut Rc<SurfaceInteraction>) -> bool {
         let mut t_hit: Float = 0.0;
         if self.shape.intersect(ray, &mut t_hit, isect) {
             // TODO: isect.primitive
@@ -165,11 +166,15 @@ impl GeometricPrimitive {
             // _Shape_ intersection
             if let Some(ref medium_interface) = self.medium_interface {
                 if medium_interface.is_medium_transition() {
-                    isect.medium_interface = Some(medium_interface.clone());
+                    if let Some(si) = Rc::get_mut(isect) {
+                        si.medium_interface = Some(medium_interface.clone());
+                    }
                 } else if let Some(ref medium_arc) = ray.medium {
-                    let inside: Option<Arc<Medium>> = Some(medium_arc.clone());
-                    let outside: Option<Arc<Medium>> = Some(medium_arc.clone());
-                    isect.medium_interface = Some(Arc::new(MediumInterface::new(inside, outside)));
+                    if let Some(si) = Rc::get_mut(isect) {
+                        let inside: Option<Arc<Medium>> = Some(medium_arc.clone());
+                        let outside: Option<Arc<Medium>> = Some(medium_arc.clone());
+                        si.medium_interface = Some(Arc::new(MediumInterface::new(inside, outside)));
+                    }
                 }
                 // print!("medium_interface = {{inside = ");
                 // if let Some(ref inside) = medium_interface.inside {

@@ -65,10 +65,12 @@ impl AOIntegrator {
             differential: r.differential,
             medium: r.medium.clone(),
         };
-        let mut isect: SurfaceInteraction = SurfaceInteraction::default();
+        let mut isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
         if scene.intersect(&mut ray, &mut isect) {
             let mode: TransportMode = TransportMode::Radiance;
-            isect.compute_scattering_functions(&ray, true, mode);
+            if let Some(si) = Rc::get_mut(&mut isect) {
+                si.compute_scattering_functions(&ray, true, mode);
+            }
             // if (!isect.bsdf) {
             //     VLOG(2) << "Skipping intersection due to null bsdf";
             //     ray = isect.SpawnRay(ray.d);

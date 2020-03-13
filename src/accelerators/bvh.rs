@@ -422,7 +422,7 @@ impl BVHAccel {
             Bounds3f::default()
         }
     }
-    pub fn intersect(&self, ray: &mut Ray, isect: &mut SurfaceInteraction) -> bool {
+    pub fn intersect(&self, ray: &mut Ray, isect: &mut Rc<SurfaceInteraction>) -> bool {
         if self.nodes.is_empty() {
             return false;
         }

@@ -365,7 +365,12 @@ impl Curve {
         // in C++: Bounds3f Shape::WorldBound() const { return (*ObjectToWorld)(ObjectBound()); }
         self.object_to_world.transform_bounds(&self.object_bound())
     }
-    pub fn intersect(&self, r: &Ray, t_hit: &mut Float, isect: &mut SurfaceInteraction) -> bool {
+    pub fn intersect(
+        &self,
+        r: &Ray,
+        t_hit: &mut Float,
+        isect: &mut Rc<SurfaceInteraction>,
+    ) -> bool {
         // TODO: ProfilePhase p(isect ? Prof::CurveIntersect : Prof::CurveIntersectP);
         // TODO: ++nTests;
         // transform _Ray_ to object space

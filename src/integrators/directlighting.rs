@@ -79,11 +79,13 @@ impl DirectLightingIntegrator {
         // TODO: ProfilePhase p(Prof::SamplerIntegratorLi);
         let mut l: Spectrum = Spectrum::new(0.0 as Float);
         // find closest ray intersection or return background radiance
-        let mut isect: SurfaceInteraction = SurfaceInteraction::default();
+        let mut isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
         if scene.intersect(ray, &mut isect) {
             // compute scattering functions for surface interaction
             let mode: TransportMode = TransportMode::Radiance;
-            isect.compute_scattering_functions(ray, false, mode);
+            if let Some(si) = Rc::get_mut(&mut isect) {
+                si.compute_scattering_functions(ray, false, mode);
+            }
             // if (!isect.bsdf)
             //     return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
             let wo: Vector3f = isect.wo;

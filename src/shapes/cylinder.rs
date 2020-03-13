@@ -93,7 +93,12 @@ impl Cylinder {
         // in C++: Bounds3f Shape::WorldBound() const { return (*ObjectToWorld)(ObjectBound()); }
         self.object_to_world.transform_bounds(&self.object_bound())
     }
-    pub fn intersect(&self, r: &Ray, t_hit: &mut Float, isect: &mut SurfaceInteraction) -> bool {
+    pub fn intersect(
+        &self,
+        r: &Ray,
+        t_hit: &mut Float,
+        isect: &mut Rc<SurfaceInteraction>,
+    ) -> bool {
         // TODO: ProfilePhase p(Prof::ShapeIntersect);
         // transform _Ray_ to object space
         let mut o_err: Vector3f = Vector3f::default();
@@ -231,10 +236,12 @@ impl Cylinder {
         // initialize _SurfaceInteraction_ from parametric information
         let uv_hit: Point2f = Point2f { x: u, y: v };
         let wo: Vector3f = -ray.d;
-        *isect = SurfaceInteraction::new(
-            &p_hit, &p_error, uv_hit, &wo, &dpdu, &dpdv, &dndu, &dndv, ray.time, None,
-        );
-        self.object_to_world.transform_surface_interaction(isect);
+        if let Some(si) = Rc::get_mut(isect) {
+            *si = SurfaceInteraction::new(
+                &p_hit, &p_error, uv_hit, &wo, &dpdu, &dpdv, &dndu, &dndv, ray.time, None,
+            );
+            self.object_to_world.transform_surface_interaction(si);
+        }
         // if let Some(ref shape) = si.shape {
         //     isect.shape = Some(shape.clone());
         // }
@@ -399,7 +406,7 @@ impl Cylinder {
         // performing this intersection. Hack for the "San Miguel"
         // scene, where this is used to make an invisible area light.
         let mut t_hit: Float = 0.0;
-        let mut isect_light: SurfaceInteraction = SurfaceInteraction::default(); 
+        let mut isect_light: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
         if self.intersect(&ray, &mut t_hit, &mut isect_light) {
             // convert light sample weight to solid angle measure
             let mut pdf: Float = pnt3_distance_squared(&iref.get_p(), &isect_light.p)

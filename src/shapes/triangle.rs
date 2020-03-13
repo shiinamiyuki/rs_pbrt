@@ -148,7 +148,12 @@ impl Triangle {
             self.mesh.p[self.mesh.vertex_indices[(self.id * 3) as usize + 2] as usize];
         bnd3_union_pnt3(&Bounds3f::new(p0, p1), &p2)
     }
-    pub fn intersect(&self, ray: &Ray, t_hit: &mut Float, isect: &mut SurfaceInteraction) -> bool {
+    pub fn intersect(
+        &self,
+        ray: &Ray,
+        t_hit: &mut Float,
+        isect: &mut Rc<SurfaceInteraction>,
+    ) -> bool {
         // get triangle vertices in _p0_, _p1_, and _p2_
         let p0: &Point3f = &self.mesh.p[self.mesh.vertex_indices[(self.id * 3) as usize] as usize];
         let p1: &Point3f =
@@ -434,28 +439,30 @@ impl Triangle {
             shading.dndu = dndu;
             shading.dndv = dndv;
         }
-        isect.p = p_hit;
-        isect.time = ray.time;
-        isect.p_error = p_error;
-        isect.wo = wo;
-        isect.n = surface_normal;
-        isect.medium_interface = None;
-        isect.uv = uv_hit;
-        isect.dpdu = dpdu;
-        isect.dpdv = dpdv;
-        isect.dndu = dndu;
-        isect.dndv = dndv;
-        isect.dpdx = Cell::new(Vector3f::default());
-        isect.dpdy = Cell::new(Vector3f::default());
-        isect.dudx = Cell::new(0.0 as Float);
-        isect.dvdx = Cell::new(0.0 as Float);
-        isect.dudy = Cell::new(0.0 as Float);
-        isect.dvdy = Cell::new(0.0 as Float);
-        isect.primitive = None;
-        isect.shading = shading;
-        isect.bsdf = None;
-        // isect.bssrdf = None;
-        isect.shape = None;
+        if let Some(si) = Rc::get_mut(isect) {
+            si.p = p_hit;
+            si.time = ray.time;
+            si.p_error = p_error;
+            si.wo = wo;
+            si.n = surface_normal;
+            si.medium_interface = None;
+            si.uv = uv_hit;
+            si.dpdu = dpdu;
+            si.dpdv = dpdv;
+            si.dndu = dndu;
+            si.dndv = dndv;
+            si.dpdx = Cell::new(Vector3f::default());
+            si.dpdy = Cell::new(Vector3f::default());
+            si.dudx = Cell::new(0.0 as Float);
+            si.dvdx = Cell::new(0.0 as Float);
+            si.dudy = Cell::new(0.0 as Float);
+            si.dvdy = Cell::new(0.0 as Float);
+            si.primitive = None;
+            si.shading = shading;
+            si.bsdf = None;
+            // si.bssrdf = None;
+            si.shape = None;
+        }
         *t_hit = t;
         true
     }
@@ -746,7 +753,7 @@ impl Triangle {
         // performing this intersection. Hack for the "San Miguel"
         // scene, where this is used to make an invisible area light.
         let mut t_hit: Float = 0.0;
-        let mut isect_light: SurfaceInteraction = SurfaceInteraction::default(); 
+        let mut isect_light: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
         if self.intersect(&ray, &mut t_hit, &mut isect_light) {
             // convert light sample weight to solid angle measure
             let mut pdf: Float = pnt3_distance_squared(&iref.get_p(), &isect_light.p)

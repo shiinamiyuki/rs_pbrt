@@ -192,14 +192,14 @@ impl TabulatedBssrdf {
 
         // accumulate chain of intersections along ray
         // IntersectionChain *ptr = chain;
-        let mut chain: Vec<SurfaceInteraction> = Vec::new();
+        let mut chain: Vec<Rc<SurfaceInteraction>> = Vec::new();
         let mut n_found: usize = 0;
         loop {
             let mut r: Ray = base.spawn_ray_to_pnt(&p_target);
             if r.d == Vector3f::default() {
                 break;
             }
-            let mut si: SurfaceInteraction = SurfaceInteraction::default();
+            let mut si: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
             if scene.intersect(&mut r, &mut si) {
                 // base = ptr->si;
                 base.p = si.p;
@@ -218,7 +218,7 @@ impl TabulatedBssrdf {
                             //         IntersectionChain *next = ARENA_ALLOC(arena, IntersectionChain)();
                             //         ptr->next = next;
                             //         ptr = next;
-                            let si_eval: SurfaceInteraction = si;
+                            let si_eval: Rc<SurfaceInteraction> = si.clone();
                             chain.push(si_eval);
                             n_found += 1;
                         }

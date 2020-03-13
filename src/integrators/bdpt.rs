@@ -1225,7 +1225,7 @@ pub fn random_walk<'a>(
         let mut si_opt: Option<Rc<SurfaceInteraction>> = None;
         // trace a ray and sample the medium, if any
         let found_intersection: bool;
-        let mut isect: SurfaceInteraction = SurfaceInteraction::default();
+        let mut isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
         if scene.intersect(&mut ray, &mut isect) {
             found_intersection = true;
         } else {
@@ -1293,7 +1293,9 @@ pub fn random_walk<'a>(
             } else {
                 // compute scattering functions for _mode_ and skip over medium
                 // boundaries
-                isect.compute_scattering_functions(&ray, true, mode);
+                if let Some(si) = Rc::get_mut(&mut isect) {
+                    si.compute_scattering_functions(&ray, true, mode);
+                }
                 let isect_wo: Vector3f = isect.wo;
                 let isect_shading_n: Normal3f = isect.shading.n;
                 if isect.bsdf.is_none() {
