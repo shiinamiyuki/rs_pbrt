@@ -29,7 +29,7 @@ use crate::core::mipmap::ImageWrap;
 use crate::core::paramset::{ParamSet, TextureParams};
 use crate::core::pbrt::lerp;
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::primitive::{GeometricPrimitive, Primitive};
+use crate::core::primitive::{GeometricPrimitive, Primitive, TransformedPrimitive};
 use crate::core::reflection::FourierBSDFTable;
 use crate::core::sampler::Sampler;
 use crate::core::scene::Scene;
@@ -1576,12 +1576,12 @@ pub fn make_accelerator(
             primitives.to_owned(),
             accelerator_params,
         )));
-        } else if accelerator_name == "kdtree" {
-            // CreateKdTreeAccelerator
-            some_accelerator = Some(Arc::new(KdTreeAccel::create(
-                primitives.to_owned(),
-                accelerator_params,
-            )));
+    } else if accelerator_name == "kdtree" {
+        // CreateKdTreeAccelerator
+        some_accelerator = Some(Arc::new(KdTreeAccel::create(
+            primitives.to_owned(),
+            accelerator_params,
+        )));
     }
     some_accelerator
 }
@@ -2775,29 +2775,29 @@ pub fn pbrt_shape(api_state: &mut ApiState, bsdf_state: &mut BsdfState, params: 
             prims.push(geo_prim.clone());
         }
         // animated?
-        // if api_state.cur_transform.is_animated() {
-        //     let animated_object_to_world: AnimatedTransform = AnimatedTransform::new(
-        //         &api_state.cur_transform.t[0],
-        //         api_state.render_options.transform_start_time,
-        //         &api_state.cur_transform.t[1],
-        //         api_state.render_options.transform_end_time,
-        //     );
-        //     if prims.len() > 1 {
-        //         let bvh: Arc<Primitive> = Arc::new(Primitive::BVH(Box::new(BVHAccel::new(
-        //             prims.clone(),
-        //             4,
-        //             SplitMethod::SAH,
-        //         ))));
-        //         prims.clear();
-        //         prims.push(bvh);
-        //     }
-        //     if let Some(primitive) = prims.pop() {
-        //         let geo_prim = Arc::new(Primitive::Transformed(Box::new(
-        //             TransformedPrimitive::new(primitive, animated_object_to_world),
-        //         )));
-        //         prims.push(geo_prim);
-        //     }
-        // }
+        if api_state.cur_transform.is_animated() {
+            let animated_object_to_world: AnimatedTransform = AnimatedTransform::new(
+                &api_state.cur_transform.t[0],
+                api_state.render_options.transform_start_time,
+                &api_state.cur_transform.t[1],
+                api_state.render_options.transform_end_time,
+            );
+            if prims.len() > 1 {
+                let bvh: Arc<Primitive> = Arc::new(Primitive::BVH(Box::new(BVHAccel::new(
+                    prims.clone(),
+                    4,
+                    SplitMethod::SAH,
+                ))));
+                prims.clear();
+                prims.push(bvh);
+            }
+            if let Some(primitive) = prims.pop() {
+                let geo_prim = Arc::new(Primitive::Transformed(Box::new(
+                    TransformedPrimitive::new(primitive, animated_object_to_world),
+                )));
+                prims.push(geo_prim);
+            }
+        }
     }
     // add _prims_ and _areaLights_ to scene or current instance
     if api_state.render_options.current_instance != "" {
@@ -3002,10 +3002,10 @@ pub fn pbrt_object_instance(api_state: &mut ApiState, params: ParamSet) {
             &api_state.cur_transform.t[1],
             api_state.render_options.transform_end_time,
         );
-    // let prim: Arc<Primitive> = Arc::new(Primitive::Transformed(Box::new(
-    //     TransformedPrimitive::new(instance_vec[0].clone(), animated_instance_to_world),
-    // )));
-    // api_state.render_options.primitives.push(prim);
+        let prim: Arc<Primitive> = Arc::new(Primitive::Transformed(Box::new(
+            TransformedPrimitive::new(instance_vec[0].clone(), animated_instance_to_world),
+        )));
+        api_state.render_options.primitives.push(prim);
     } else {
         println!(
             "ERROR: Unable to find instance named {:?}",

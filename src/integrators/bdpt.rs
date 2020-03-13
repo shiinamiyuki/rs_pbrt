@@ -1222,7 +1222,6 @@ pub fn random_walk<'a>(
         //     bounces, beta, pdf_fwd, pdf_rev
         // );
         let mut mi_opt: Option<MediumInteraction> = None;
-        let mut si_opt: Option<Rc<SurfaceInteraction>> = None;
         // trace a ray and sample the medium, if any
         let found_intersection: bool;
         let mut isect: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());

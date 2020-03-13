@@ -6,7 +6,7 @@ use std::sync::Arc;
 // pbrt
 use crate::core::bssrdf::compute_beam_diffusion_bssrdf;
 use crate::core::bssrdf::BssrdfTable;
-// use crate::core::bssrdf::TabulatedBssrdf;
+use crate::core::bssrdf::TabulatedBssrdf;
 use crate::core::interaction::SurfaceInteraction;
 use crate::core::material::{Material, TransportMode};
 use crate::core::medium::get_medium_scattering_properties;
@@ -269,15 +269,15 @@ impl SubsurfaceMaterial {
                     .sigma_s
                     .evaluate(si)
                     .clamp(0.0 as Float, std::f32::INFINITY as Float);
-            // si.bssrdf = Some(TabulatedBssrdf::new(
-            //     si,
-            //     material,
-            //     mode,
-            //     self.eta,
-            //     &sig_a,
-            //     &sig_s,
-            //     self.table.clone(),
-            // ));
+            si.bssrdf = Some(TabulatedBssrdf::new(
+                si,
+                material,
+                mode,
+                self.eta,
+                &sig_a,
+                &sig_s,
+                self.table.clone(),
+            ));
         }
     }
 }
