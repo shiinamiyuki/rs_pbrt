@@ -10,7 +10,7 @@ use std::sync::Arc;
 use crate::core::geometry::{Bounds3f, Ray, Vector3f};
 use crate::core::interaction::{Interaction, SurfaceInteraction};
 use crate::core::light::{Light, LightFlags};
-use crate::core::pbrt::{Float, Spectrum};
+use crate::core::pbrt::Spectrum;
 use crate::core::primitive::Primitive;
 use crate::core::sampler::Sampler;
 
@@ -84,7 +84,6 @@ impl Scene {
         isect: &mut Rc<SurfaceInteraction>,
         tr: &mut Spectrum,
     ) -> bool {
-        // let mut tr: Spectrum = Spectrum::new(1.0 as Float);
         loop {
             // bool hit_surface = Intersect(ray, isect);
             let hit_surface: bool = self.intersect(ray, isect);

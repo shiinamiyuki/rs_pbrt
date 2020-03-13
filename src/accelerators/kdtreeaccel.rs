@@ -472,16 +472,16 @@ impl KdTreeAccel {
     pub fn world_bound(&self) -> Bounds3f {
         self.bounds
     }
-    pub fn intersect(&self, ray: &mut Ray) -> Option<Rc<SurfaceInteraction>> {
+    pub fn intersect(&self, ray: &mut Ray, isect: &mut Rc<SurfaceInteraction>) -> bool {
         // TODO: ProfilePhase p(Prof::AccelIntersect);
         if self.nodes.is_empty() {
-            return None;
+            return false;
         }
         // compute initial parametric range of ray inside kd-tree extent
         let mut t_min: Float = 0.0;
         let mut t_max: Float = 0.0;
         if !self.bounds.intersect_b(&ray, &mut t_min, &mut t_max) {
-            return None;
+            return false;
         }
         // prepare to traverse kd-tree for ray
         let inv_dir: Vector3f = Vector3f {
@@ -493,7 +493,6 @@ impl KdTreeAccel {
         let mut todo_pos: usize = 0;
         // traverse kd-tree nodes in order for ray
         let mut hit: bool = false;
-        let mut si: Rc<SurfaceInteraction> = Rc::new(SurfaceInteraction::default());
         let mut node_idx: usize = 0;
         let mut node_opt: Option<&KdAccelNode> = self.nodes.get(node_idx);
         while let Some(node) = node_opt {
@@ -553,8 +552,7 @@ impl KdTreeAccel {
                     }
                     let p: &Arc<Primitive> = &self.primitives[one_primitive as usize];
                     // check one primitive inside leaf node
-                    if let Some(isect) = p.intersect(ray) {
-                        si = isect.clone();
+                    if p.intersect(ray, isect) {
                         hit = true;
                     }
                 } else {
@@ -568,8 +566,7 @@ impl KdTreeAccel {
                             as usize;
                         let p: &Arc<Primitive> = &self.primitives[index];
                         // check one primitive inside leaf node
-                        if let Some(isect) = p.intersect(ray) {
-                            si = isect;
+                        if p.intersect(ray, isect) {
                             hit = true;
                         }
                     }
@@ -587,9 +584,9 @@ impl KdTreeAccel {
             }
         }
         if hit {
-            Some(si)
+            true
         } else {
-            None
+            false
         }
     }
     pub fn intersect_p(&self, ray: &Ray) -> bool {

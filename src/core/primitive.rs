@@ -2,12 +2,11 @@
 //! geometry processing and shading subsystems of pbrt.
 
 // std
-use std::borrow::Borrow;
 use std::rc::Rc;
 use std::sync::Arc;
 // pbrt
 use crate::accelerators::bvh::BVHAccel;
-// use crate::accelerators::kdtreeaccel::KdTreeAccel;
+use crate::accelerators::kdtreeaccel::KdTreeAccel;
 use crate::core::geometry::nrm_dot_nrm;
 use crate::core::geometry::{Bounds3f, Ray};
 use crate::core::interaction::SurfaceInteraction;
@@ -22,18 +21,18 @@ use crate::core::transform::{AnimatedTransform, Transform};
 
 pub enum Primitive {
     Geometric(Box<GeometricPrimitive>),
-    // Transformed(Box<TransformedPrimitive>),
+    Transformed(Box<TransformedPrimitive>),
     BVH(Box<BVHAccel>),
-    // KdTree(Box<KdTreeAccel>),
+    KdTree(Box<KdTreeAccel>),
 }
 
 impl Primitive {
     pub fn world_bound(&self) -> Bounds3f {
         match self {
             Primitive::Geometric(primitive) => primitive.world_bound(),
-            // Primitive::Transformed(primitive) => primitive.world_bound(),
+            Primitive::Transformed(primitive) => primitive.world_bound(),
             Primitive::BVH(primitive) => primitive.world_bound(),
-            // Primitive::KdTree(primitive) => primitive.world_bound(),
+            Primitive::KdTree(primitive) => primitive.world_bound(),
         }
     }
     pub fn intersect(&self, ray: &mut Ray, isect: &mut Rc<SurfaceInteraction>) -> bool {
@@ -47,33 +46,33 @@ impl Primitive {
                 }
                 hit_surface
             }
-            // Primitive::Transformed(primitive) => primitive.intersect(ray),
+            Primitive::Transformed(primitive) => primitive.intersect(ray, isect),
             Primitive::BVH(primitive) => primitive.intersect(ray, isect),
-            // Primitive::KdTree(primitive) => primitive.intersect(ray),
+            Primitive::KdTree(primitive) => primitive.intersect(ray, isect),
         }
     }
     pub fn intersect_p(&self, ray: &Ray) -> bool {
         match self {
             Primitive::Geometric(primitive) => primitive.intersect_p(ray),
-            // Primitive::Transformed(primitive) => primitive.intersect_p(ray),
+            Primitive::Transformed(primitive) => primitive.intersect_p(ray),
             Primitive::BVH(primitive) => primitive.intersect_p(ray),
-            // Primitive::KdTree(primitive) => primitive.intersect_p(ray),
+            Primitive::KdTree(primitive) => primitive.intersect_p(ray),
         }
     }
     pub fn get_area_light(&self) -> Option<Arc<Light>> {
         match self {
             Primitive::Geometric(primitive) => primitive.get_area_light(),
-            // Primitive::Transformed(primitive) => primitive.get_area_light(),
+            Primitive::Transformed(primitive) => primitive.get_area_light(),
             Primitive::BVH(primitive) => primitive.get_area_light(),
-            // Primitive::KdTree(primitive) => primitive.get_area_light(),
+            Primitive::KdTree(primitive) => primitive.get_area_light(),
         }
     }
     pub fn get_material(&self) -> Option<Arc<Material>> {
         match self {
             Primitive::Geometric(primitive) => primitive.get_material(),
-            // Primitive::Transformed(primitive) => primitive.get_material(),
+            Primitive::Transformed(primitive) => primitive.get_material(),
             Primitive::BVH(primitive) => primitive.get_material(),
-            // Primitive::KdTree(primitive) => primitive.get_material(),
+            Primitive::KdTree(primitive) => primitive.get_material(),
         }
     }
     pub fn compute_scattering_functions(
@@ -160,7 +159,6 @@ impl GeometricPrimitive {
         if self.shape.intersect(ray, &mut t_hit, isect) {
             // TODO: isect.primitive
             ray.t_max = t_hit;
-            // let it: &SurfaceInteraction = isect_rc.borrow();
             assert!(nrm_dot_nrm(&isect.n, &isect.shading.n) >= 0.0 as Float);
             // initialize _SurfaceInteraction::mediumInterface_ after
             // _Shape_ intersection
@@ -212,78 +210,78 @@ impl GeometricPrimitive {
     }
 }
 
-// pub struct TransformedPrimitive {
-//     pub primitive: Arc<Primitive>,
-//     pub primitive_to_world: AnimatedTransform,
-// }
+pub struct TransformedPrimitive {
+    pub primitive: Arc<Primitive>,
+    pub primitive_to_world: AnimatedTransform,
+}
 
-// impl TransformedPrimitive {
-//     pub fn new(primitive: Arc<Primitive>, primitive_to_world: AnimatedTransform) -> Self {
-//         TransformedPrimitive {
-//             primitive,
-//             primitive_to_world,
-//         }
-//     }
-//     // Primitive
-//     pub fn world_bound(&self) -> Bounds3f {
-//         self.primitive_to_world
-//             .motion_bounds(&self.primitive.world_bound())
-//     }
-//     pub fn intersect(&self, r: &mut Ray, isect: &mut SurfaceInteraction) -> bool {
-//         // compute _ray_ after transformation by _self.primitive_to_world_
-//         let mut interpolated_prim_to_world: Transform = Transform::default();
-//         self.primitive_to_world
-//             .interpolate(r.time, &mut interpolated_prim_to_world);
-//         let mut ray: Ray = Transform::inverse(&interpolated_prim_to_world).transform_ray(&*r);
-//         if let Some(mut ) = self.primitive.intersect(&mut ray) {
-//             r.t_max = ray.t_max;
-//             // transform instance's intersection data to world space
-//             if !interpolated_prim_to_world.is_identity() {
-//                 interpolated_prim_to_world.transform_surface_interaction(&mut isect);
-//                 // let new_isect = interpolated_prim_to_world.transform_surface_interaction(isect);
-//                 // assert!(nrm_dot_nrm(&new_isect.n, &new_isect.shading.n) >= 0.0 as Float);
-//                 // let mut is: SurfaceInteraction = SurfaceInteraction::new(
-//                 //     &new_isect.p,
-//                 //     &new_isect.p_error,
-//                 //     new_isect.uv,
-//                 //     &new_isect.wo,
-//                 //     &new_isect.dpdu,
-//                 //     &new_isect.dpdv,
-//                 //     &new_isect.dndu,
-//                 //     &new_isect.dndv,
-//                 //     new_isect.time,
-//                 //     None,
-//                 // );
-//                 // // we need to preserve the primitive pointer
-//                 // if let Some(primitive) = isect.primitive {
-//                 //     is.primitive = Some(primitive);
-//                 // }
-//                 // // keep shading (and normal)
-//                 // is.n = new_isect.n;
-//                 // is.shading.n = new_isect.shading.n;
-//                 // is.shading.dpdu = new_isect.shading.dpdu;
-//                 // is.shading.dpdv = new_isect.shading.dpdv;
-//                 // is.shading.dndu = new_isect.shading.dndu;
-//                 // is.shading.dndv = new_isect.shading.dndv;
-//                 return Some(isect);
-//             }
-//             None
-//         } else {
-//             None
-//         }
-//     }
-//     pub fn intersect_p(&self, r: &Ray) -> bool {
-//         let mut interpolated_prim_to_world: Transform = Transform::default();
-//         self.primitive_to_world
-//             .interpolate(r.time, &mut interpolated_prim_to_world);
-//         interpolated_prim_to_world = Transform::inverse(&interpolated_prim_to_world);
-//         self.primitive
-//             .intersect_p(&interpolated_prim_to_world.transform_ray(&*r))
-//     }
-//     pub fn get_material(&self) -> Option<Arc<Material>> {
-//         None
-//     }
-//     pub fn get_area_light(&self) -> Option<Arc<Light>> {
-//         None
-//     }
-// }
+impl TransformedPrimitive {
+    pub fn new(primitive: Arc<Primitive>, primitive_to_world: AnimatedTransform) -> Self {
+        TransformedPrimitive {
+            primitive,
+            primitive_to_world,
+        }
+    }
+    // Primitive
+    pub fn world_bound(&self) -> Bounds3f {
+        self.primitive_to_world
+            .motion_bounds(&self.primitive.world_bound())
+    }
+    pub fn intersect(&self, r: &mut Ray, isect: &mut Rc<SurfaceInteraction>) -> bool {
+        // compute _ray_ after transformation by _self.primitive_to_world_
+        let mut interpolated_prim_to_world: Transform = Transform::default();
+        self.primitive_to_world
+            .interpolate(r.time, &mut interpolated_prim_to_world);
+        let mut ray: Ray = Transform::inverse(&interpolated_prim_to_world).transform_ray(&*r);
+        if self.primitive.intersect(&mut ray, isect) {
+            r.t_max = ray.t_max;
+            // transform instance's intersection data to world space
+            if !interpolated_prim_to_world.is_identity() {
+                interpolated_prim_to_world.transform_surface_interaction(isect);
+                // let new_isect = interpolated_prim_to_world.transform_surface_interaction(isect);
+                // assert!(nrm_dot_nrm(&new_isect.n, &new_isect.shading.n) >= 0.0 as Float);
+                // let mut is: SurfaceInteraction = SurfaceInteraction::new(
+                //     &new_isect.p,
+                //     &new_isect.p_error,
+                //     new_isect.uv,
+                //     &new_isect.wo,
+                //     &new_isect.dpdu,
+                //     &new_isect.dpdv,
+                //     &new_isect.dndu,
+                //     &new_isect.dndv,
+                //     new_isect.time,
+                //     None,
+                // );
+                // // we need to preserve the primitive pointer
+                // if let Some(primitive) = isect.primitive {
+                //     is.primitive = Some(primitive);
+                // }
+                // // keep shading (and normal)
+                // is.n = new_isect.n;
+                // is.shading.n = new_isect.shading.n;
+                // is.shading.dpdu = new_isect.shading.dpdu;
+                // is.shading.dpdv = new_isect.shading.dpdv;
+                // is.shading.dndu = new_isect.shading.dndu;
+                // is.shading.dndv = new_isect.shading.dndv;
+                return true;
+            }
+            false
+        } else {
+            false
+        }
+    }
+    pub fn intersect_p(&self, r: &Ray) -> bool {
+        let mut interpolated_prim_to_world: Transform = Transform::default();
+        self.primitive_to_world
+            .interpolate(r.time, &mut interpolated_prim_to_world);
+        interpolated_prim_to_world = Transform::inverse(&interpolated_prim_to_world);
+        self.primitive
+            .intersect_p(&interpolated_prim_to_world.transform_ray(&*r))
+    }
+    pub fn get_material(&self) -> Option<Arc<Material>> {
+        None
+    }
+    pub fn get_area_light(&self) -> Option<Arc<Light>> {
+        None
+    }
+}

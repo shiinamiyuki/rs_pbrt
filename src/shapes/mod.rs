@@ -59,7 +59,7 @@
 //! TODO
 //!
 
-// pub mod curve;
+pub mod curve;
 pub mod cylinder;
 pub mod disk;
 pub mod loopsubdiv;

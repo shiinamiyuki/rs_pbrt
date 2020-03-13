@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 // pbrt
 use crate::accelerators::bvh::{BVHAccel, SplitMethod};
-// use crate::accelerators::kdtreeaccel::KdTreeAccel;
+use crate::accelerators::kdtreeaccel::KdTreeAccel;
 use crate::cameras::environment::EnvironmentCamera;
 use crate::cameras::orthographic::OrthographicCamera;
 use crate::cameras::perspective::PerspectiveCamera;
@@ -80,7 +80,7 @@ use crate::samplers::random::RandomSampler;
 use crate::samplers::sobol::SobolSampler;
 use crate::samplers::stratified::StratifiedSampler;
 use crate::samplers::zerotwosequence::ZeroTwoSequenceSampler;
-// use crate::shapes::curve::create_curve_shape;
+use crate::shapes::curve::create_curve_shape;
 use crate::shapes::cylinder::Cylinder;
 use crate::shapes::disk::Disk;
 use crate::shapes::loopsubdiv::loop_subdivide;
@@ -1576,12 +1576,12 @@ pub fn make_accelerator(
             primitives.to_owned(),
             accelerator_params,
         )));
-        // } else if accelerator_name == "kdtree" {
-        //     // CreateKdTreeAccelerator
-        //     some_accelerator = Some(Arc::new(KdTreeAccel::create(
-        //         primitives.to_owned(),
-        //         accelerator_params,
-        //     )));
+        } else if accelerator_name == "kdtree" {
+            // CreateKdTreeAccelerator
+            some_accelerator = Some(Arc::new(KdTreeAccel::create(
+                primitives.to_owned(),
+                accelerator_params,
+            )));
     }
     some_accelerator
 }
@@ -1796,18 +1796,18 @@ fn get_shapes_and_materials(
         println!("TODO: CreateParaboloidShape");
     } else if api_state.param_set.name == "hyperboloid" {
         println!("TODO: CreateHyperboloidShape");
-    // } else if api_state.param_set.name == "curve" {
-    //     let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
-    //     let curve_shapes: Vec<Arc<Shape>> = create_curve_shape(
-    //         &obj_to_world,
-    //         &world_to_obj,
-    //         false, // reverse_orientation
-    //         &api_state.param_set,
-    //     );
-    //     for shape in curve_shapes {
-    //         shapes.push(shape.clone());
-    //         materials.push(mtl.clone());
-    //     }
+    } else if api_state.param_set.name == "curve" {
+        let mtl: Option<Arc<Material>> = create_material(&api_state, bsdf_state);
+        let curve_shapes: Vec<Arc<Shape>> = create_curve_shape(
+            &obj_to_world,
+            &world_to_obj,
+            false, // reverse_orientation
+            &api_state.param_set,
+        );
+        for shape in curve_shapes {
+            shapes.push(shape.clone());
+            materials.push(mtl.clone());
+        }
     } else if api_state.param_set.name == "trianglemesh" {
         let vi = api_state.param_set.find_int("indices");
         let p = api_state.param_set.find_point3f("P");
@@ -2980,14 +2980,14 @@ pub fn pbrt_object_instance(api_state: &mut ApiState, params: ParamSet) {
                     ))));
                 instance_vec.clear();
                 instance_vec.push(accelerator);
-            // } else if api_state.render_options.accelerator_name == "kdtree" {
-            //     // println!("TODO: CreateKdTreeAccelerator");
-            //     // WARNING: Use BVHAccel for now !!!
-            //     let accelerator: Arc<Primitive> = Arc::new(Primitive::BVH(Box::new(
-            //         BVHAccel::new(instance_vec.clone(), 4, SplitMethod::SAH),
-            //     )));
-            //     instance_vec.clear();
-            //     instance_vec.push(accelerator);
+            } else if api_state.render_options.accelerator_name == "kdtree" {
+                // println!("TODO: CreateKdTreeAccelerator");
+                // WARNING: Use BVHAccel for now !!!
+                let accelerator: Arc<Primitive> = Arc::new(Primitive::BVH(Box::new(
+                    BVHAccel::new(instance_vec.clone(), 4, SplitMethod::SAH),
+                )));
+                instance_vec.clear();
+                instance_vec.push(accelerator);
             } else {
                 panic!(
                     "Accelerator \"{}\" unknown.",

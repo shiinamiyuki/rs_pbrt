@@ -157,8 +157,8 @@ impl Disk {
             *si = SurfaceInteraction::new(
                 &p_hit, &p_error, uv_hit, &wo, &dpdu, &dpdv, &dndu, &dndv, ray.time, None,
             );
-            self.object_to_world.transform_surface_interaction(si);
         }
+        self.object_to_world.transform_surface_interaction(isect);
         // if let Some(ref shape) = si.shape {
         //     isect.shape = Some(shape.clone());
         // }
