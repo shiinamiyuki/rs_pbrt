@@ -1,5 +1,5 @@
 // std
-use std::sync::atomic::{AtomicI32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicU64, AtomicUsize, Ordering};
 // others
 use strum::IntoEnumIterator;
 // pbrt
@@ -61,10 +61,10 @@ pub struct HaltonSampler {
     pub offset_for_current_pixel: AtomicU64,
     pub sample_at_pixel_center: bool, // default: false
     // inherited from class GlobalSampler (see sampler.h)
-    pub dimension: i64,
+    dimension: AtomicI32,
     pub interval_sample_index: u64,
-    pub array_start_dim: i64,
-    pub array_end_dim: i64,
+    pub array_start_dim: AtomicI32,
+    pub array_end_dim: AtomicI32,
     // inherited from class Sampler (see sampler.h)
     pub current_pixel: Point2i,
     pub current_pixel_sample_index: i64,
@@ -72,8 +72,8 @@ pub struct HaltonSampler {
     pub samples_2d_array_sizes: Vec<i32>,
     pub sample_array_1d: Vec<Vec<Float>>,
     pub sample_array_2d: Vec<Vec<Point2f>>,
-    pub array_1d_offset: usize,
-    pub array_2d_offset: usize,
+    array_1d_offset: AtomicUsize,
+    array_2d_offset: AtomicUsize,
 }
 
 impl HaltonSampler {
@@ -116,18 +116,18 @@ impl HaltonSampler {
             pixel_for_offset_y: AtomicI32::new(0_i32),
             offset_for_current_pixel: AtomicU64::new(0_u64),
             sample_at_pixel_center,
-            dimension: 0_i64,
+            dimension: AtomicI32::new(0_i32),
             interval_sample_index: 0_u64,
-            array_start_dim: 5_i64, // static const int arrayStartDim = 5;
-            array_end_dim: 0_i64,
+            array_start_dim: AtomicI32::new(5_i32), // static const int arrayStartDim = 5;
+            array_end_dim: AtomicI32::new(0_i32),
             current_pixel: Point2i::default(),
             current_pixel_sample_index: 0_i64,
             samples_1d_array_sizes: Vec::new(),
             samples_2d_array_sizes: Vec::new(),
             sample_array_1d: Vec::new(),
             sample_array_2d: Vec::new(),
-            array_1d_offset: 0_usize,
-            array_2d_offset: 0_usize,
+            array_1d_offset: AtomicUsize::new(0_usize),
+            array_2d_offset: AtomicUsize::new(0_usize),
         }
     }
     pub fn clone_with_seed(&self, _seed: u64) -> Box<Sampler> {
@@ -144,18 +144,18 @@ impl HaltonSampler {
             pixel_for_offset_y: AtomicI32::new(pixel_for_offset_y),
             offset_for_current_pixel: AtomicU64::new(offset_for_current_pixel),
             sample_at_pixel_center: self.sample_at_pixel_center,
-            dimension: self.dimension,
+            dimension: AtomicI32::new(self.dimension.load(Ordering::Relaxed)),
             interval_sample_index: self.interval_sample_index,
-            array_start_dim: self.array_start_dim,
-            array_end_dim: self.array_end_dim,
+            array_start_dim: AtomicI32::new(self.array_start_dim.load(Ordering::Relaxed)),
+            array_end_dim: AtomicI32::new(self.array_end_dim.load(Ordering::Relaxed)),
             current_pixel: self.current_pixel,
             current_pixel_sample_index: self.current_pixel_sample_index,
             samples_1d_array_sizes: self.samples_1d_array_sizes.to_vec(),
             samples_2d_array_sizes: self.samples_2d_array_sizes.to_vec(),
             sample_array_1d: self.sample_array_1d.to_vec(),
             sample_array_2d: self.sample_array_2d.to_vec(),
-            array_1d_offset: self.array_1d_offset,
-            array_2d_offset: self.array_2d_offset,
+            array_1d_offset: AtomicUsize::new(self.array_1d_offset.load(Ordering::Relaxed)),
+            array_2d_offset: AtomicUsize::new(self.array_2d_offset.load(Ordering::Relaxed)),
         };
         let sampler = Sampler::Halton(halton_sampler);
         Box::new(sampler)
@@ -212,7 +212,7 @@ impl HaltonSampler {
         let offset_for_current_pixel: u64 = self.offset_for_current_pixel.load(Ordering::Relaxed);
         offset_for_current_pixel + sample_num * self.sample_stride
     }
-    pub fn sample_dimension(&self, index: u64, dim: i64) -> Float {
+    pub fn sample_dimension(&self, index: u64, dim: i32) -> Float {
         if self.sample_at_pixel_center && (dim == 0 || dim == 1) {
             return 0.5 as Float;
         }
@@ -224,8 +224,8 @@ impl HaltonSampler {
             scrambled_radical_inverse(dim as u16, index, self.permutation_for_dimension(dim))
         }
     }
-    fn permutation_for_dimension(&self, dim: i64) -> &[u16] {
-        if dim >= PRIME_TABLE_SIZE as i64 {
+    fn permutation_for_dimension(&self, dim: i32) -> &[u16] {
+        if dim >= PRIME_TABLE_SIZE as i32 {
             panic!(
                 "FATAL: HaltonSampler can only sample {:?} dimensions (dim = {}).",
                 PRIME_TABLE_SIZE, dim
@@ -239,59 +239,85 @@ impl HaltonSampler {
         // Sampler::StartPixel(p);
         self.current_pixel = p;
         self.current_pixel_sample_index = 0_i64;
-        self.array_1d_offset = 0_usize;
-        self.array_2d_offset = 0_usize;
+        self.array_1d_offset = AtomicUsize::new(0_usize);
+        self.array_2d_offset = AtomicUsize::new(0_usize);
         // GlobalSampler::StartPixel(p);
-        self.dimension = 0_i64;
+        self.dimension = AtomicI32::new(0_i32);
         self.interval_sample_index = self.get_index_for_sample(0_u64);
         // compute _self.array_end_dim_ for dimensions used for array samples
-        self.array_end_dim = self.array_start_dim
-            + self.sample_array_1d.len() as i64
-            + 2_i64 * self.sample_array_2d.len() as i64;
+        self.array_end_dim.store(
+            self.array_start_dim.load(Ordering::Relaxed)
+                + self.sample_array_1d.len() as i32
+                + 2_i32 * self.sample_array_2d.len() as i32,
+            Ordering::Relaxed,
+        );
         // compute 1D array samples for _GlobalSampler_
         for i in 0..self.samples_1d_array_sizes.len() {
             let n_samples = self.samples_1d_array_sizes[i] * self.samples_per_pixel as i32;
             for j in 0..n_samples {
                 let index: u64 = self.get_index_for_sample(j as u64);
-                self.sample_array_1d[i as usize][j as usize] =
-                    self.sample_dimension(index, self.array_start_dim + i as i64);
+                self.sample_array_1d[i as usize][j as usize] = self.sample_dimension(
+                    index,
+                    self.array_start_dim.load(Ordering::Relaxed) + i as i32,
+                );
             }
         }
         // compute 2D array samples for _GlobalSampler_
-        let mut dim: i64 = self.array_start_dim + self.samples_1d_array_sizes.len() as i64;
+        let mut dim: i32 =
+            self.array_start_dim.load(Ordering::Relaxed) + self.samples_1d_array_sizes.len() as i32;
         for i in 0..self.samples_2d_array_sizes.len() {
             let n_samples: usize =
                 self.samples_2d_array_sizes[i] as usize * self.samples_per_pixel as usize;
             for j in 0..n_samples {
                 let idx: u64 = self.get_index_for_sample(j as u64);
                 self.sample_array_2d[i][j].x = self.sample_dimension(idx, dim);
-                self.sample_array_2d[i][j].y = self.sample_dimension(idx, dim + 1_i64);
+                self.sample_array_2d[i][j].y = self.sample_dimension(idx, dim + 1_i32);
             }
-            dim += 2_i64;
+            dim += 2_i32;
         }
-        assert!(self.array_end_dim == dim);
+        assert!(self.array_end_dim.load(Ordering::Relaxed) == dim);
     }
-    pub fn get_1d(&mut self) -> Float {
+    pub fn get_1d(&self) -> Float {
         // TODO: ProfilePhase _(Prof::GetSample);
-        if self.dimension >= self.array_start_dim && self.dimension < self.array_end_dim {
-            self.dimension = self.array_end_dim;
+        if self.dimension.load(Ordering::Relaxed) >= self.array_start_dim.load(Ordering::Relaxed)
+            && self.dimension.load(Ordering::Relaxed) < self.array_end_dim.load(Ordering::Relaxed)
+        {
+            self.dimension.store(
+                self.array_end_dim.load(Ordering::Relaxed),
+                Ordering::Relaxed,
+            );
         }
         // call first (in C++: return SampleDimension(intervalSampleIndex, dimension++));
-        let ret: Float = self.sample_dimension(self.interval_sample_index, self.dimension);
-        self.dimension += 1;
+        let ret: Float = self.sample_dimension(
+            self.interval_sample_index,
+            self.dimension.load(Ordering::Relaxed),
+        );
+        self.dimension.fetch_add(1_i32, Ordering::SeqCst);
         // then return
         ret
     }
-    pub fn get_2d(&mut self) -> Point2f {
+    pub fn get_2d(&self) -> Point2f {
         // TODO: ProfilePhase _(Prof::GetSample);
-        if self.dimension + 1 >= self.array_start_dim && self.dimension < self.array_end_dim {
-            self.dimension = self.array_end_dim;
+        if self.dimension.load(Ordering::Relaxed) + 1
+            >= self.array_start_dim.load(Ordering::Relaxed)
+            && self.dimension.load(Ordering::Relaxed) < self.array_end_dim.load(Ordering::Relaxed)
+        {
+            self.dimension.store(
+                self.array_end_dim.load(Ordering::Relaxed),
+                Ordering::Relaxed,
+            );
         }
         // C++: call y first
-        let y = self.sample_dimension(self.interval_sample_index, self.dimension + 1);
-        let x = self.sample_dimension(self.interval_sample_index, self.dimension);
+        let y = self.sample_dimension(
+            self.interval_sample_index,
+            self.dimension.load(Ordering::Relaxed) + 1,
+        );
+        let x = self.sample_dimension(
+            self.interval_sample_index,
+            self.dimension.load(Ordering::Relaxed),
+        );
         let p: Point2f = Point2f { x, y };
-        self.dimension += 2;
+        self.dimension.fetch_add(2_i32, Ordering::SeqCst);
         p
     }
     pub fn request_2d_array(&mut self, n: i32) {
@@ -305,10 +331,13 @@ impl HaltonSampler {
         count
     }
     pub fn get_2d_array(&mut self, n: i32) -> Option<&[Point2f]> {
-        if self.array_2d_offset == self.sample_array_2d.len() {
+        if self.array_2d_offset.load(Ordering::Relaxed) == self.sample_array_2d.len() {
             return None;
         }
-        assert_eq!(self.samples_2d_array_sizes[self.array_2d_offset], n);
+        assert_eq!(
+            self.samples_2d_array_sizes[self.array_2d_offset.load(Ordering::Relaxed)],
+            n
+        );
         assert!(
             self.current_pixel_sample_index < self.samples_per_pixel,
             "self.current_pixel_sample_index ({}) < self.samples_per_pixel ({})",
@@ -317,14 +346,17 @@ impl HaltonSampler {
         );
         let start: usize = (self.current_pixel_sample_index * n as i64) as usize;
         let end: usize = start + n as usize;
-        self.array_2d_offset += 1;
-        Some(&self.sample_array_2d[self.array_2d_offset - 1][start..end])
+        self.array_2d_offset.fetch_add(1_usize, Ordering::SeqCst);
+        Some(&self.sample_array_2d[self.array_2d_offset.load(Ordering::Relaxed) - 1][start..end])
     }
     pub fn get_2d_arrays(&mut self, n: i32) -> (Option<&[Point2f]>, Option<&[Point2f]>) {
-        if self.array_2d_offset == self.sample_array_2d.len() {
+        if self.array_2d_offset.load(Ordering::Relaxed) == self.sample_array_2d.len() {
             return (None, None);
         }
-        assert_eq!(self.samples_2d_array_sizes[self.array_2d_offset], n);
+        assert_eq!(
+            self.samples_2d_array_sizes[self.array_2d_offset.load(Ordering::Relaxed)],
+            n
+        );
         assert!(
             self.current_pixel_sample_index < self.samples_per_pixel,
             "self.current_pixel_sample_index ({}) < self.samples_per_pixel ({})",
@@ -333,13 +365,17 @@ impl HaltonSampler {
         );
         let start: usize = (self.current_pixel_sample_index * n as i64) as usize;
         let end: usize = start + n as usize;
-        self.array_2d_offset += 1;
-        let ret1 = &self.sample_array_2d[self.array_2d_offset - 1][start..end];
+        self.array_2d_offset.fetch_add(1_usize, Ordering::SeqCst);
+        let ret1 =
+            &self.sample_array_2d[self.array_2d_offset.load(Ordering::Relaxed) - 1][start..end];
         // repeat code from above
-        if self.array_2d_offset == self.sample_array_2d.len() {
+        if self.array_2d_offset.load(Ordering::Relaxed) == self.sample_array_2d.len() {
             return (None, None);
         }
-        assert_eq!(self.samples_2d_array_sizes[self.array_2d_offset], n);
+        assert_eq!(
+            self.samples_2d_array_sizes[self.array_2d_offset.load(Ordering::Relaxed)],
+            n
+        );
         assert!(
             self.current_pixel_sample_index < self.samples_per_pixel,
             "self.current_pixel_sample_index ({}) < self.samples_per_pixel ({})",
@@ -348,17 +384,20 @@ impl HaltonSampler {
         );
         let start: usize = (self.current_pixel_sample_index * n as i64) as usize;
         let end: usize = start + n as usize;
-        self.array_2d_offset += 1;
-        let ret2 = &self.sample_array_2d[self.array_2d_offset - 1][start..end];
+        self.array_2d_offset.fetch_add(1_usize, Ordering::SeqCst);
+        let ret2 =
+            &self.sample_array_2d[self.array_2d_offset.load(Ordering::Relaxed) - 1][start..end];
         // return tuple
         (Some(ret1), Some(ret2))
     }
-    pub fn get_2d_array_vec(&mut self, n: i32) -> Vec<Point2f> {
-        let mut samples: Vec<Point2f> = Vec::new();
-        if self.array_2d_offset == self.sample_array_2d.len() {
-            return samples;
+    pub fn get_2d_array_vec(&self, n: i32) -> &[Point2f] {
+        if self.array_2d_offset.load(Ordering::Relaxed) == self.sample_array_2d.len() {
+            return &self.sample_array_2d[self.array_2d_offset.load(Ordering::Relaxed)][0..0];
         }
-        assert_eq!(self.samples_2d_array_sizes[self.array_2d_offset], n);
+        assert_eq!(
+            self.samples_2d_array_sizes[self.array_2d_offset.load(Ordering::Relaxed)],
+            n
+        );
         assert!(
             self.current_pixel_sample_index < self.samples_per_pixel,
             "self.current_pixel_sample_index ({}) < self.samples_per_pixel ({})",
@@ -367,18 +406,17 @@ impl HaltonSampler {
         );
         let start: usize = (self.current_pixel_sample_index * n as i64) as usize;
         let end: usize = start + n as usize;
-        samples = self.sample_array_2d[self.array_2d_offset][start..end].to_vec();
-        self.array_2d_offset += 1;
-        samples
+        self.array_2d_offset.fetch_add(1_usize, Ordering::SeqCst);
+        &self.sample_array_2d[self.array_2d_offset.load(Ordering::Relaxed)][start..end]
     }
     pub fn start_next_sample(&mut self) -> bool {
-        self.dimension = 0_i64;
+        self.dimension = AtomicI32::new(0_i32);
         self.interval_sample_index =
             self.get_index_for_sample(self.current_pixel_sample_index as u64 + 1_u64);
         // Sampler::StartNextSample();
         // reset array offsets for next pixel sample
-        self.array_1d_offset = 0_usize;
-        self.array_2d_offset = 0_usize;
+        self.array_1d_offset = AtomicUsize::new(0_usize);
+        self.array_2d_offset = AtomicUsize::new(0_usize);
         self.current_pixel_sample_index += 1_i64;
         self.current_pixel_sample_index < self.samples_per_pixel
     }
@@ -397,11 +435,11 @@ impl HaltonSampler {
     // GlobalSampler
     pub fn set_sample_number(&mut self, sample_num: i64) -> bool {
         // GlobalSampler::SetSampleNumber(...)
-        self.dimension = 0_i64;
+        self.dimension = AtomicI32::new(0_i32);
         self.interval_sample_index = self.get_index_for_sample(sample_num as u64);
         // reset array offsets for next pixel sample
-        self.array_1d_offset = 0_usize;
-        self.array_2d_offset = 0_usize;
+        self.array_1d_offset = AtomicUsize::new(0_usize);
+        self.array_2d_offset = AtomicUsize::new(0_usize);
         self.current_pixel_sample_index = sample_num;
         self.current_pixel_sample_index < self.samples_per_pixel
     }

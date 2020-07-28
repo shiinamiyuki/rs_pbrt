@@ -152,7 +152,7 @@ impl GridDensityMedium {
         lerp(d.z, d0, d1)
     }
     // Medium
-    pub fn tr(&self, r_world: &Ray, sampler: &mut Sampler) -> Spectrum {
+    pub fn tr(&self, r_world: &Ray, sampler: &Sampler) -> Spectrum {
         // TODO: ProfilePhase _(Prof::MediumTr);
         // TODO: ++nTrCalls;
         let mut in_ray: Ray = Ray::default();
@@ -207,7 +207,7 @@ impl GridDensityMedium {
     pub fn sample(
         &self,
         r_world: &Ray,
-        sampler: &mut Sampler,
+        sampler: &Sampler,
     ) -> (Spectrum, Option<MediumInteraction>) {
         // TODO: ProfilePhase _(Prof::MediumSample);
         let mut in_ray: Ray = Ray::default();

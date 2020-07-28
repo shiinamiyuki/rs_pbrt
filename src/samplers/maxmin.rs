@@ -254,7 +254,7 @@ impl MaxMinDistSampler {
         // return tuple
         (Some(ret1), Some(ret2))
     }
-    pub fn get_2d_array_vec(&mut self, n: i32) -> Vec<Point2f> {
+    pub fn get_2d_array_vec(&mut self, n: i32) -> &Vec<Point2f> {
         let mut samples: Vec<Point2f> = Vec::new();
         if self.array_2d_offset == self.sample_array_2d.len() {
             return samples;
