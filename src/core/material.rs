@@ -9,15 +9,16 @@ use crate::core::geometry::vec3_cross_vec3;
 use crate::core::geometry::{Normal3f, Vector2f, Vector3f};
 use crate::core::interaction::SurfaceInteraction;
 use crate::core::pbrt::{Float, Spectrum};
+use crate::core::reflection::Bsdf;
 use crate::core::texture::Texture;
-use crate::materials::disney::DisneyMaterial;
+// use crate::materials::disney::DisneyMaterial;
 use crate::materials::fourier::FourierMaterial;
 use crate::materials::glass::GlassMaterial;
 use crate::materials::hair::HairMaterial;
 use crate::materials::matte::MatteMaterial;
 use crate::materials::metal::MetalMaterial;
 use crate::materials::mirror::MirrorMaterial;
-use crate::materials::mixmat::MixMaterial;
+// use crate::materials::mixmat::MixMaterial;
 use crate::materials::plastic::PlasticMaterial;
 use crate::materials::substrate::SubstrateMaterial;
 use crate::materials::subsurface::SubsurfaceMaterial;
@@ -36,14 +37,14 @@ pub enum TransportMode {
 }
 
 pub enum Material {
-    Disney(Box<DisneyMaterial>),
+    // Disney(Box<DisneyMaterial>),
     Fourier(Box<FourierMaterial>),
     Glass(Box<GlassMaterial>),
     Hair(Box<HairMaterial>),
     Matte(Box<MatteMaterial>),
     Metal(Box<MetalMaterial>),
     Mirror(Box<MirrorMaterial>),
-    Mix(Box<MixMaterial>),
+    // Mix(Box<MixMaterial>),
     Plastic(Box<PlasticMaterial>),
     Substrate(Box<SubstrateMaterial>),
     Subsurface(Box<SubsurfaceMaterial>),
@@ -62,52 +63,117 @@ impl Material {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         mode: TransportMode,
         allow_multiple_lobes: bool,
         mat: Option<Arc<Material>>,
         scale: Option<Spectrum>,
     ) {
         match self {
-            Material::Disney(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Fourier(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Glass(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Hair(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Matte(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Metal(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Mirror(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Mix(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Plastic(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Substrate(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Subsurface(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Translucent(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
-            Material::Uber(material) => {
-                material.compute_scattering_functions(si, mode, allow_multiple_lobes, mat, scale)
-            }
+            // Material::Disney(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            Material::Fourier(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Glass(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Hair(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Matte(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Metal(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Mirror(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            // Material::Mix(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            Material::Plastic(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Substrate(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Subsurface(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Translucent(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Uber(material) => material.compute_scattering_functions(
+                si,
+                arena,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
         }
     }
     /// Computing the effect of bump mapping at the point being shaded

@@ -44,11 +44,11 @@ use crate::filters::mitchell::MitchellNetravali;
 use crate::filters::sinc::LanczosSincFilter;
 use crate::filters::triangle::TriangleFilter;
 use crate::integrators::ao::AOIntegrator;
-use crate::integrators::bdpt::BDPTIntegrator;
+// use crate::integrators::bdpt::BDPTIntegrator;
 use crate::integrators::directlighting::{DirectLightingIntegrator, LightStrategy};
-use crate::integrators::mlt::MLTIntegrator;
+// use crate::integrators::mlt::MLTIntegrator;
 use crate::integrators::path::PathIntegrator;
-use crate::integrators::sppm::SPPMIntegrator;
+// use crate::integrators::sppm::SPPMIntegrator;
 use crate::integrators::volpath::VolPathIntegrator;
 use crate::integrators::whitted::WhittedIntegrator;
 use crate::lights::diffuse::DiffuseAreaLight;
@@ -58,14 +58,14 @@ use crate::lights::infinite::InfiniteAreaLight;
 use crate::lights::point::PointLight;
 use crate::lights::projection::ProjectionLight;
 use crate::lights::spot::SpotLight;
-use crate::materials::disney::DisneyMaterial;
+// use crate::materials::disney::DisneyMaterial;
 use crate::materials::fourier::FourierMaterial;
 use crate::materials::glass::GlassMaterial;
 use crate::materials::hair::HairMaterial;
 use crate::materials::matte::MatteMaterial;
 use crate::materials::metal::MetalMaterial;
 use crate::materials::mirror::MirrorMaterial;
-use crate::materials::mixmat::MixMaterial;
+// use crate::materials::mixmat::MixMaterial;
 use crate::materials::plastic::PlasticMaterial;
 use crate::materials::substrate::SubstrateMaterial;
 use crate::materials::subsurface::SubsurfaceMaterial;
@@ -326,58 +326,58 @@ impl RenderOptions {
                         ),
                     )));
                     some_integrator = Some(integrator);
-                } else if self.integrator_name == "bdpt" {
-                    // CreateBDPTIntegrator
-                    let mut max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
-                    let visualize_strategies: bool = self
-                        .integrator_params
-                        .find_one_bool("visualizestrategies", false);
-                    let visualize_weights: bool = self
-                        .integrator_params
-                        .find_one_bool("visualizeweights", false);
-                    if (visualize_strategies || visualize_weights) && max_depth > 5_i32 {
-                        print!("WARNING: visualizestrategies/visualizeweights was enabled,");
-                        println!(" limiting maxdepth to 5");
-                        max_depth = 5;
-                    }
-                    let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
-                    let light_strategy: String = self
-                        .integrator_params
-                        .find_one_string("lightsamplestrategy", String::from("power"));
-                    let integrator = Box::new(Integrator::BDPT(BDPTIntegrator::new(
-                        camera,
-                        sampler,
-                        pixel_bounds,
-                        max_depth as u32,
-                        light_strategy,
-                    )));
-                    some_integrator = Some(integrator);
-                } else if self.integrator_name == "mlt" {
-                    // CreateMLTIntegrator
-                    let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
-                    let n_bootstrap: i32 = self
-                        .integrator_params
-                        .find_one_int("bootstrapsamples", 100_000);
-                    let n_chains: i32 = self.integrator_params.find_one_int("chains", 1000);
-                    let mutations_per_pixel: i32 = self
-                        .integrator_params
-                        .find_one_int("mutationsperpixel", 100);
-                    let large_step_probability: Float = self
-                        .integrator_params
-                        .find_one_float("largestepprobability", 0.3 as Float);
-                    let sigma: Float = self
-                        .integrator_params
-                        .find_one_float("sigma", 0.01 as Float);
-                    let integrator = Box::new(Integrator::MLT(MLTIntegrator::new(
-                        camera,
-                        max_depth as u32,
-                        n_bootstrap as u32,
-                        n_chains as u32,
-                        mutations_per_pixel as u32,
-                        sigma,
-                        large_step_probability,
-                    )));
-                    some_integrator = Some(integrator);
+                // } else if self.integrator_name == "bdpt" {
+                //     // CreateBDPTIntegrator
+                //     let mut max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
+                //     let visualize_strategies: bool = self
+                //         .integrator_params
+                //         .find_one_bool("visualizestrategies", false);
+                //     let visualize_weights: bool = self
+                //         .integrator_params
+                //         .find_one_bool("visualizeweights", false);
+                //     if (visualize_strategies || visualize_weights) && max_depth > 5_i32 {
+                //         print!("WARNING: visualizestrategies/visualizeweights was enabled,");
+                //         println!(" limiting maxdepth to 5");
+                //         max_depth = 5;
+                //     }
+                //     let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
+                //     let light_strategy: String = self
+                //         .integrator_params
+                //         .find_one_string("lightsamplestrategy", String::from("power"));
+                //     let integrator = Box::new(Integrator::BDPT(BDPTIntegrator::new(
+                //         camera,
+                //         sampler,
+                //         pixel_bounds,
+                //         max_depth as u32,
+                //         light_strategy,
+                //     )));
+                //     some_integrator = Some(integrator);
+                // } else if self.integrator_name == "mlt" {
+                //     // CreateMLTIntegrator
+                //     let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
+                //     let n_bootstrap: i32 = self
+                //         .integrator_params
+                //         .find_one_int("bootstrapsamples", 100_000);
+                //     let n_chains: i32 = self.integrator_params.find_one_int("chains", 1000);
+                //     let mutations_per_pixel: i32 = self
+                //         .integrator_params
+                //         .find_one_int("mutationsperpixel", 100);
+                //     let large_step_probability: Float = self
+                //         .integrator_params
+                //         .find_one_float("largestepprobability", 0.3 as Float);
+                //     let sigma: Float = self
+                //         .integrator_params
+                //         .find_one_float("sigma", 0.01 as Float);
+                //     let integrator = Box::new(Integrator::MLT(MLTIntegrator::new(
+                //         camera,
+                //         max_depth as u32,
+                //         n_bootstrap as u32,
+                //         n_chains as u32,
+                //         mutations_per_pixel as u32,
+                //         sigma,
+                //         large_step_probability,
+                //     )));
+                //     some_integrator = Some(integrator);
                 } else if self.integrator_name == "ambientocclusion" {
                     // CreateAOIntegrator
                     let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
@@ -403,33 +403,33 @@ impl RenderOptions {
                         AOIntegrator::new(cos_sample, n_samples, camera, sampler, pixel_bounds),
                     )));
                     some_integrator = Some(integrator);
-                } else if self.integrator_name == "sppm" {
-                    // CreateSPPMIntegrator
-                    let mut n_iterations: i32 =
-                        self.integrator_params.find_one_int("numiterations", 64);
-                    n_iterations = self
-                        .integrator_params
-                        .find_one_int("iterations", n_iterations);
-                    let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
-                    let photons_per_iter: i32 = self
-                        .integrator_params
-                        .find_one_int("photonsperiteration", -1);
-                    let write_freq: i32 = self
-                        .integrator_params
-                        .find_one_int("imagewritefrequency", 1 << 31);
-                    let radius: Float = self
-                        .integrator_params
-                        .find_one_float("radius", 1.0 as Float);
-                    // TODO: if (PbrtOptions.quickRender) nIterations = std::max(1, nIterations / 16);
-                    let integrator = Box::new(Integrator::SPPM(SPPMIntegrator::new(
-                        camera,
-                        n_iterations,
-                        photons_per_iter,
-                        max_depth as u32,
-                        radius,
-                        write_freq,
-                    )));
-                    some_integrator = Some(integrator);
+                // } else if self.integrator_name == "sppm" {
+                //     // CreateSPPMIntegrator
+                //     let mut n_iterations: i32 =
+                //         self.integrator_params.find_one_int("numiterations", 64);
+                //     n_iterations = self
+                //         .integrator_params
+                //         .find_one_int("iterations", n_iterations);
+                //     let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
+                //     let photons_per_iter: i32 = self
+                //         .integrator_params
+                //         .find_one_int("photonsperiteration", -1);
+                //     let write_freq: i32 = self
+                //         .integrator_params
+                //         .find_one_int("imagewritefrequency", 1 << 31);
+                //     let radius: Float = self
+                //         .integrator_params
+                //         .find_one_float("radius", 1.0 as Float);
+                //     // TODO: if (PbrtOptions.quickRender) nIterations = std::max(1, nIterations / 16);
+                //     let integrator = Box::new(Integrator::SPPM(SPPMIntegrator::new(
+                //         camera,
+                //         n_iterations,
+                //         photons_per_iter,
+                //         max_depth as u32,
+                //         radius,
+                //         write_freq,
+                //     )));
+                //     some_integrator = Some(integrator);
                 } else {
                     println!("Integrator \"{}\" unknown.", self.integrator_name);
                 }
@@ -635,34 +635,34 @@ fn create_material(api_state: &ApiState, bsdf_state: &mut BsdfState) -> Option<A
             return Some(MirrorMaterial::create(&mut mp));
         } else if api_state.graphics_state.material == "hair" {
             return Some(HairMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "mix" {
-            let m1: String = mp.find_string("namedmaterial1", String::from(""));
-            let m2: String = mp.find_string("namedmaterial2", String::from(""));
-            let mat1 = match api_state.graphics_state.named_materials.get(&m1) {
-                Some(named_material) => named_material,
-                None => {
-                    panic!("Material \"{}\" unknown.", m1);
-                }
-            };
-            let mat2 = match api_state.graphics_state.named_materials.get(&m2) {
-                Some(named_material) => named_material,
-                None => {
-                    panic!("Material \"{}\" unknown.", m2);
-                }
-            };
-            let scale: Arc<dyn Texture<Spectrum> + Send + Sync> =
-                mp.get_spectrum_texture("amount", Spectrum::new(0.5));
-            if let Some(m1) = mat1 {
-                if let Some(m2) = mat2 {
-                    let mix = Arc::new(Material::Mix(Box::new(MixMaterial::new(
-                        m1.clone(),
-                        m2.clone(),
-                        scale,
-                    ))));
-                    return Some(mix);
-                }
-            }
-            return None;
+        // } else if api_state.graphics_state.material == "mix" {
+        //     let m1: String = mp.find_string("namedmaterial1", String::from(""));
+        //     let m2: String = mp.find_string("namedmaterial2", String::from(""));
+        //     let mat1 = match api_state.graphics_state.named_materials.get(&m1) {
+        //         Some(named_material) => named_material,
+        //         None => {
+        //             panic!("Material \"{}\" unknown.", m1);
+        //         }
+        //     };
+        //     let mat2 = match api_state.graphics_state.named_materials.get(&m2) {
+        //         Some(named_material) => named_material,
+        //         None => {
+        //             panic!("Material \"{}\" unknown.", m2);
+        //         }
+        //     };
+        //     let scale: Arc<dyn Texture<Spectrum> + Send + Sync> =
+        //         mp.get_spectrum_texture("amount", Spectrum::new(0.5));
+        //     if let Some(m1) = mat1 {
+        //         if let Some(m2) = mat2 {
+        //             let mix = Arc::new(Material::Mix(Box::new(MixMaterial::new(
+        //                 m1.clone(),
+        //                 m2.clone(),
+        //                 scale,
+        //             ))));
+        //             return Some(mix);
+        //         }
+        //     }
+        //     return None;
         } else if api_state.graphics_state.material == "metal" {
             return Some(MetalMaterial::create(&mut mp));
         } else if api_state.graphics_state.material == "substrate" {
@@ -675,8 +675,8 @@ fn create_material(api_state: &ApiState, bsdf_state: &mut BsdfState) -> Option<A
             println!("TODO: CreateKdsubsurfaceMaterial");
         } else if api_state.graphics_state.material == "fourier" {
             return Some(FourierMaterial::create(&mut mp, bsdf_state));
-        } else if api_state.graphics_state.material == "disney" {
-            return Some(DisneyMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "disney" {
+        //     return Some(DisneyMaterial::create(&mut mp));
         } else {
             panic!(
                 "Material \"{}\" unknown.",

@@ -32,9 +32,9 @@ use crate::core::pbrt::{clamp_t, lerp, radians};
 use crate::core::pbrt::{Float, Spectrum};
 use crate::core::rng::FLOAT_ONE_MINUS_EPSILON;
 use crate::core::sampling::cosine_sample_hemisphere;
-use crate::materials::disney::{
-    DisneyClearCoat, DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen,
-};
+// use crate::materials::disney::{
+//     DisneyClearCoat, DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen,
+// };
 use crate::materials::hair::HairBSDF;
 
 /// https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
@@ -478,11 +478,11 @@ pub enum Bxdf {
     // bssrdf.rs
     Bssrdf(SeparableBssrdfAdapter),
     // disney.rs
-    DisDiff(DisneyDiffuse),
-    DisSS(DisneyFakeSS),
-    DisRetro(DisneyRetro),
-    DisSheen(DisneySheen),
-    DisClearCoat(DisneyClearCoat),
+    // DisDiff(DisneyDiffuse),
+    // DisSS(DisneyFakeSS),
+    // DisRetro(DisneyRetro),
+    // DisSheen(DisneySheen),
+    // DisClearCoat(DisneyClearCoat),
     // hair.rs
     Hair(HairBSDF),
 }
@@ -502,11 +502,11 @@ impl Bxdf {
             Bxdf::FresnelBlnd(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
             Bxdf::Fourier(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
             Bxdf::Bssrdf(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
-            Bxdf::DisDiff(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
-            Bxdf::DisSS(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
-            Bxdf::DisRetro(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
-            Bxdf::DisSheen(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
-            Bxdf::DisClearCoat(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
+            // Bxdf::DisDiff(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
+            // Bxdf::DisSS(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
+            // Bxdf::DisRetro(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
+            // Bxdf::DisSheen(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
+            // Bxdf::DisClearCoat(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
             Bxdf::Hair(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
         }
     }
@@ -524,11 +524,11 @@ impl Bxdf {
             Bxdf::FresnelBlnd(bxdf) => bxdf.f(wo, wi),
             Bxdf::Fourier(bxdf) => bxdf.f(wo, wi),
             Bxdf::Bssrdf(bxdf) => bxdf.f(wo, wi),
-            Bxdf::DisDiff(bxdf) => bxdf.f(wo, wi),
-            Bxdf::DisSS(bxdf) => bxdf.f(wo, wi),
-            Bxdf::DisRetro(bxdf) => bxdf.f(wo, wi),
-            Bxdf::DisSheen(bxdf) => bxdf.f(wo, wi),
-            Bxdf::DisClearCoat(bxdf) => bxdf.f(wo, wi),
+            // Bxdf::DisDiff(bxdf) => bxdf.f(wo, wi),
+            // Bxdf::DisSS(bxdf) => bxdf.f(wo, wi),
+            // Bxdf::DisRetro(bxdf) => bxdf.f(wo, wi),
+            // Bxdf::DisSheen(bxdf) => bxdf.f(wo, wi),
+            // Bxdf::DisClearCoat(bxdf) => bxdf.f(wo, wi),
             Bxdf::Hair(bxdf) => bxdf.f(wo, wi),
         }
     }
@@ -557,11 +557,11 @@ impl Bxdf {
             Bxdf::FresnelBlnd(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
             Bxdf::Fourier(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
             Bxdf::Bssrdf(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
-            Bxdf::DisDiff(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
-            Bxdf::DisSS(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
-            Bxdf::DisRetro(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
-            Bxdf::DisSheen(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
-            Bxdf::DisClearCoat(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
+            // Bxdf::DisDiff(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
+            // Bxdf::DisSS(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
+            // Bxdf::DisRetro(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
+            // Bxdf::DisSheen(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
+            // Bxdf::DisClearCoat(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
             Bxdf::Hair(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
         }
     }
@@ -597,11 +597,11 @@ impl Bxdf {
             Bxdf::FresnelBlnd(bxdf) => bxdf.pdf(wo, wi),
             Bxdf::Fourier(bxdf) => bxdf.pdf(wo, wi),
             Bxdf::Bssrdf(_bxdf) => self.default_pdf(wo, wi),
-            Bxdf::DisDiff(_bxdf) => self.default_pdf(wo, wi),
-            Bxdf::DisSS(_bxdf) => self.default_pdf(wo, wi),
-            Bxdf::DisRetro(_bxdf) => self.default_pdf(wo, wi),
-            Bxdf::DisSheen(_bxdf) => self.default_pdf(wo, wi),
-            Bxdf::DisClearCoat(bxdf) => bxdf.pdf(wo, wi),
+            // Bxdf::DisDiff(_bxdf) => self.default_pdf(wo, wi),
+            // Bxdf::DisSS(_bxdf) => self.default_pdf(wo, wi),
+            // Bxdf::DisRetro(_bxdf) => self.default_pdf(wo, wi),
+            // Bxdf::DisSheen(_bxdf) => self.default_pdf(wo, wi),
+            // Bxdf::DisClearCoat(bxdf) => bxdf.pdf(wo, wi),
             Bxdf::Hair(bxdf) => bxdf.pdf(wo, wi),
         }
     }
@@ -626,11 +626,11 @@ impl Bxdf {
             Bxdf::FresnelBlnd(bxdf) => bxdf.get_type(),
             Bxdf::Fourier(bxdf) => bxdf.get_type(),
             Bxdf::Bssrdf(bxdf) => bxdf.get_type(),
-            Bxdf::DisDiff(bxdf) => bxdf.get_type(),
-            Bxdf::DisSS(bxdf) => bxdf.get_type(),
-            Bxdf::DisRetro(bxdf) => bxdf.get_type(),
-            Bxdf::DisSheen(bxdf) => bxdf.get_type(),
-            Bxdf::DisClearCoat(bxdf) => bxdf.get_type(),
+            // Bxdf::DisDiff(bxdf) => bxdf.get_type(),
+            // Bxdf::DisSS(bxdf) => bxdf.get_type(),
+            // Bxdf::DisRetro(bxdf) => bxdf.get_type(),
+            // Bxdf::DisSheen(bxdf) => bxdf.get_type(),
+            // Bxdf::DisClearCoat(bxdf) => bxdf.get_type(),
             Bxdf::Hair(bxdf) => bxdf.get_type(),
         }
     }

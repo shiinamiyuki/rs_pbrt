@@ -34,7 +34,7 @@ impl MirrorMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -53,16 +53,15 @@ impl MirrorMaterial {
             .kr
             .evaluate(si)
             .clamp(0.0 as Float, std::f32::INFINITY as Float);
-        si.bsdf = Some(Bsdf::new(si, 1.0));
-        if let Some(bsdf) = &mut si.bsdf {
-            let bxdf_idx: usize = 0;
-            let fresnel = Fresnel::NoOp(FresnelNoOp {});
-            if use_scale {
-                bsdf.bxdfs[bxdf_idx] =
-                    Bxdf::SpecRefl(SpecularReflection::new(r, fresnel, Some(sc)));
-            } else {
-                bsdf.bxdfs[bxdf_idx] = Bxdf::SpecRefl(SpecularReflection::new(r, fresnel, None));
-            }
+        let mut bsdf = Bsdf::new(si, 1.0);
+        let bxdf_idx: usize = 0;
+        let fresnel = Fresnel::NoOp(FresnelNoOp {});
+        if use_scale {
+            bsdf.bxdfs[bxdf_idx] = Bxdf::SpecRefl(SpecularReflection::new(r, fresnel, Some(sc)));
+        } else {
+            bsdf.bxdfs[bxdf_idx] = Bxdf::SpecRefl(SpecularReflection::new(r, fresnel, None));
         }
+        arena.push(bsdf);
+        si.bsdf = Some(arena.len() - 1);
     }
 }

@@ -12,7 +12,7 @@ use crate::core::lightdistrib::create_light_sample_distribution;
 use crate::core::lightdistrib::LightDistribution;
 use crate::core::material::TransportMode;
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::reflection::BxdfType;
+use crate::core::reflection::{Bsdf, BxdfType};
 use crate::core::sampler::Sampler;
 use crate::core::sampling::Distribution1D;
 use crate::core::scene::Scene;
@@ -60,7 +60,7 @@ impl PathIntegrator {
         r: &Ray,
         scene: &Scene,
         sampler: &mut Sampler,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         _depth: i32,
     ) -> Spectrum {
         // TODO: ProfilePhase p(Prof::SamplerIntegratorLi);
@@ -104,7 +104,7 @@ impl PathIntegrator {
                 }
                 // compute scattering functions and skip over medium boundaries
                 let mode: TransportMode = TransportMode::Radiance;
-                isect.compute_scattering_functions(&ray, true, mode);
+                isect.compute_scattering_functions(&ray, arena, true, mode);
                 if let Some(ref _bsdf) = isect.bsdf {
                     // we are fine (for below)
                 } else {
@@ -118,7 +118,7 @@ impl PathIntegrator {
                     // Sample illumination from lights to find path contribution.
                     // (But skip this for perfectly specular BSDFs.)
                     let bsdf_flags: u8 = BxdfType::BsdfAll as u8 & !(BxdfType::BsdfSpecular as u8);
-                    if let Some(ref bsdf) = isect.bsdf {
+                    if let Some(ref bsdf) = isect.get_bsdf(arena) {
                         if bsdf.num_components(bsdf_flags) > 0 {
                             // TODO: ++total_paths;
                             let it: &SurfaceInteraction = isect.borrow();
@@ -126,6 +126,7 @@ impl PathIntegrator {
                                 * uniform_sample_one_light(
                                     it,
                                     scene,
+                                    arena,
                                     sampler,
                                     false,
                                     Some(&distrib),
@@ -216,6 +217,7 @@ impl PathIntegrator {
                                         * uniform_sample_one_light(
                                             &pi,
                                             scene,
+                                            arena,
                                             sampler,
                                             false,
                                             Some(&distrib),
@@ -225,7 +227,7 @@ impl PathIntegrator {
                                     let mut pdf: Float = 0.0 as Float;
                                     let bsdf_flags: u8 = BxdfType::BsdfAll as u8;
                                     let mut sampled_type: u8 = u8::max_value(); // != 0
-                                    if let Some(ref bsdf) = pi.bsdf {
+                                    if let Some(ref bsdf) = pi.get_bsdf(arena) {
                                         let f: Spectrum = bsdf.sample_f(
                                             &pi.common.wo,
                                             &mut wi,

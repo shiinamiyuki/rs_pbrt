@@ -7,13 +7,13 @@ use crate::core::geometry::{Bounds2i, Normal3f, Point2f, Ray, Vector3f};
 use crate::core::interaction::{Interaction, SurfaceInteraction};
 use crate::core::material::TransportMode;
 use crate::core::pbrt::{Float, Spectrum};
+use crate::core::reflection::Bsdf;
 use crate::core::sampler::Sampler;
 use crate::core::sampling::{
     cosine_hemisphere_pdf, cosine_sample_hemisphere, uniform_hemisphere_pdf,
     uniform_sample_hemisphere,
 };
 use crate::core::scene::Scene;
-
 // see ao.h
 
 /// Ambient Occlusion
@@ -51,7 +51,7 @@ impl AOIntegrator {
         r: &mut Ray,
         scene: &Scene,
         sampler: &mut Sampler,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         _depth: i32,
     ) -> Spectrum {
         // TODO: ProfilePhase p(Prof::SamplerIntegratorLi);
@@ -67,7 +67,7 @@ impl AOIntegrator {
         let mut isect: SurfaceInteraction = SurfaceInteraction::default();
         if scene.intersect(&mut ray, &mut isect) {
             let mode: TransportMode = TransportMode::Radiance;
-            isect.compute_scattering_functions(&ray, true, mode);
+            isect.compute_scattering_functions(&ray, arena, true, mode);
             // if (!isect.bsdf) {
             //     VLOG(2) << "Skipping intersection due to null bsdf";
             //     ray = isect.SpawnRay(ray.d);
@@ -98,7 +98,8 @@ impl AOIntegrator {
                     };
                     let mut ray: Ray = isect.spawn_ray(&wi);
                     if !scene.intersect_p(&mut ray) {
-                        l += Spectrum::new(vec3_dot_nrmf(&wi, &n) / (pdf * self.n_samples as Float));
+                        l +=
+                            Spectrum::new(vec3_dot_nrmf(&wi, &n) / (pdf * self.n_samples as Float));
                     }
                 }
             }

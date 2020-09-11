@@ -43,7 +43,7 @@ impl MatteMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -67,24 +67,23 @@ impl MatteMaterial {
             0.0 as Float,
             90.0 as Float,
         );
-        si.bsdf = Some(Bsdf::new(si, 1.0));
-        if let Some(bsdf) = &mut si.bsdf {
-            let bxdf_idx: usize = 0;
-            if !r.is_black() {
-                if sig == 0.0 {
-                    if use_scale {
-                        bsdf.bxdfs[bxdf_idx] =
-                            Bxdf::LambertianRefl(LambertianReflection::new(r, Some(sc)));
-                    } else {
-                        bsdf.bxdfs[bxdf_idx] =
-                            Bxdf::LambertianRefl(LambertianReflection::new(r, None));
-                    }
-                } else if use_scale {
-                    bsdf.bxdfs[bxdf_idx] = Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, Some(sc)));
+        let mut bsdf = Bsdf::new(si, 1.0);
+        let bxdf_idx: usize = 0;
+        if !r.is_black() {
+            if sig == 0.0 {
+                if use_scale {
+                    bsdf.bxdfs[bxdf_idx] =
+                        Bxdf::LambertianRefl(LambertianReflection::new(r, Some(sc)));
                 } else {
-                    bsdf.bxdfs[bxdf_idx] = Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, None));
+                    bsdf.bxdfs[bxdf_idx] = Bxdf::LambertianRefl(LambertianReflection::new(r, None));
                 }
+            } else if use_scale {
+                bsdf.bxdfs[bxdf_idx] = Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, Some(sc)));
+            } else {
+                bsdf.bxdfs[bxdf_idx] = Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, None));
             }
         }
+        arena.push(bsdf);
+        si.bsdf = Some(arena.len() - 1);
     }
 }

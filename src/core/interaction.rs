@@ -38,7 +38,7 @@ pub trait Interaction {
     fn get_wo(&self) -> &Vector3f;
     fn get_n(&self) -> &Normal3f;
     fn get_medium_interface(&self) -> Option<Arc<MediumInterface>>;
-    fn get_bsdf(&self) -> Option<&Bsdf>;
+    fn get_bsdf<'b>(&self, arena: &'b Vec<Bsdf>) -> Option<&'b Bsdf>;
     fn get_shading_n(&self) -> Option<&Normal3f>;
     fn get_phase(&self) -> Option<Arc<HenyeyGreenstein>>;
 }
@@ -229,7 +229,7 @@ impl Interaction for MediumInteraction {
             None
         }
     }
-    fn get_bsdf(&self) -> Option<&Bsdf> {
+    fn get_bsdf<'b>(&self, _arena: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
         None
     }
     fn get_shading_n(&self) -> Option<&Normal3f> {
@@ -262,7 +262,7 @@ pub struct SurfaceInteraction<'a> {
     pub dvdy: Cell<Float>,
     pub primitive: Option<*const Primitive>,
     pub shading: Shading,
-    pub bsdf: Option<Bsdf>,
+    pub bsdf: Option<usize>,
     pub bssrdf: Option<TabulatedBssrdf>,
     pub shape: Option<&'a Shape>,
 }
@@ -400,18 +400,14 @@ impl<'a> SurfaceInteraction<'a> {
     pub fn compute_scattering_functions(
         &mut self,
         ray: &Ray,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         allow_multiple_lobes: bool,
         mode: TransportMode,
     ) {
         self.compute_differentials(ray);
         if let Some(primitive_raw) = self.primitive {
             let primitive = unsafe { &*primitive_raw };
-            primitive.compute_scattering_functions(
-                self, // arena,
-                mode,
-                allow_multiple_lobes,
-            );
+            primitive.compute_scattering_functions(self, arena, mode, allow_multiple_lobes);
         }
     }
     pub fn compute_differentials(&mut self, ray: &Ray) {
@@ -571,9 +567,9 @@ impl<'a> Interaction for SurfaceInteraction<'a> {
             None
         }
     }
-    fn get_bsdf(&self) -> Option<&Bsdf> {
-        if let Some(ref bsdf) = self.bsdf {
-            Some(bsdf)
+    fn get_bsdf<'b>(&self, arena: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
+        if let Some(bsdf_idx) = self.bsdf {
+            Some(&arena[bsdf_idx])
         } else {
             None
         }

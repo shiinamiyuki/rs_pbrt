@@ -62,7 +62,7 @@ impl SubstrateMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -87,26 +87,26 @@ impl SubstrateMaterial {
             .clamp(0.0 as Float, std::f32::INFINITY as Float);
         let mut roughu: Float = self.nu.evaluate(si);
         let mut roughv: Float = self.nv.evaluate(si);
-        si.bsdf = Some(Bsdf::new(si, 1.0));
-        if let Some(bsdf) = &mut si.bsdf {
-            let bxdf_idx: usize = 0;
-            if !d.is_black() || !s.is_black() {
-                if self.remap_roughness {
-                    roughu = TrowbridgeReitzDistribution::roughness_to_alpha(roughu);
-                    roughv = TrowbridgeReitzDistribution::roughness_to_alpha(roughv);
-                }
-                let distrib: Option<MicrofacetDistribution> =
-                    Some(MicrofacetDistribution::TrowbridgeReitz(
-                        TrowbridgeReitzDistribution::new(roughu, roughv, true),
-                    ));
-                if use_scale {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, Some(sc)));
-                } else {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, None));
-                }
+        let mut bsdf = Bsdf::new(si, 1.0);
+        si.bsdf = Some(arena.len() - 1);
+        let bxdf_idx: usize = 0;
+        if !d.is_black() || !s.is_black() {
+            if self.remap_roughness {
+                roughu = TrowbridgeReitzDistribution::roughness_to_alpha(roughu);
+                roughv = TrowbridgeReitzDistribution::roughness_to_alpha(roughv);
+            }
+            let distrib: Option<MicrofacetDistribution> =
+                Some(MicrofacetDistribution::TrowbridgeReitz(
+                    TrowbridgeReitzDistribution::new(roughu, roughv, true),
+                ));
+            if use_scale {
+                bsdf.bxdfs[bxdf_idx] =
+                    Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, Some(sc)));
+            } else {
+                bsdf.bxdfs[bxdf_idx] = Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, None));
             }
         }
+        arena.push(bsdf);
+        si.bsdf = Some(arena.len() - 1);
     }
 }

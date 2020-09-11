@@ -14,7 +14,7 @@ use crate::core::reflection::{
     abs_cos_theta, cos_2_phi, cos_2_theta, cos_phi, cos_theta, sin_2_phi, sin_phi, tan_2_theta,
     tan_theta, vec3_same_hemisphere_vec3,
 };
-use crate::materials::disney::DisneyMicrofacetDistribution;
+// use crate::materials::disney::DisneyMicrofacetDistribution;
 
 // see microfacet.h
 
@@ -23,7 +23,7 @@ pub enum MicrofacetDistribution {
     Beckmann(BeckmannDistribution),
     TrowbridgeReitz(TrowbridgeReitzDistribution),
     // see disney.rs
-    DisneyMicrofacet(DisneyMicrofacetDistribution),
+    // DisneyMicrofacet(DisneyMicrofacetDistribution),
 }
 
 impl MicrofacetDistribution {
@@ -31,42 +31,42 @@ impl MicrofacetDistribution {
         match self {
             MicrofacetDistribution::Beckmann(distribution) => distribution.d(wh),
             MicrofacetDistribution::TrowbridgeReitz(distribution) => distribution.d(wh),
-            MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.d(wh),
+            // MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.d(wh),
         }
     }
     pub fn lambda(&self, w: &Vector3f) -> Float {
         match self {
             MicrofacetDistribution::Beckmann(distribution) => distribution.lambda(w),
             MicrofacetDistribution::TrowbridgeReitz(distribution) => distribution.lambda(w),
-            MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.lambda(w),
+            // MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.lambda(w),
         }
     }
     pub fn g1(&self, w: &Vector3f) -> Float {
         match self {
             MicrofacetDistribution::Beckmann(distribution) => distribution.g1(w),
             MicrofacetDistribution::TrowbridgeReitz(distribution) => distribution.g1(w),
-            MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.g1(w),
+            // MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.g1(w),
         }
     }
     pub fn g(&self, wo: &Vector3f, wi: &Vector3f) -> Float {
         match self {
             MicrofacetDistribution::Beckmann(distribution) => distribution.g(wo, wi),
             MicrofacetDistribution::TrowbridgeReitz(distribution) => distribution.g(wo, wi),
-            MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.g(wo, wi),
+            // MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.g(wo, wi),
         }
     }
     pub fn pdf(&self, wo: &Vector3f, wh: &Vector3f) -> Float {
         match self {
             MicrofacetDistribution::Beckmann(distribution) => distribution.pdf(wo, wh),
             MicrofacetDistribution::TrowbridgeReitz(distribution) => distribution.pdf(wo, wh),
-            MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.pdf(wo, wh),
+            // MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.pdf(wo, wh),
         }
     }
     pub fn sample_wh(&self, wo: &Vector3f, u: Point2f) -> Vector3f {
         match self {
             MicrofacetDistribution::Beckmann(distribution) => distribution.sample_wh(wo, u),
             MicrofacetDistribution::TrowbridgeReitz(distribution) => distribution.sample_wh(wo, u),
-            MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.sample_wh(wo, u),
+            // MicrofacetDistribution::DisneyMicrofacet(distribution) => distribution.sample_wh(wo, u),
         }
     }
     pub fn get_sample_visible_area(&self) -> bool {
@@ -77,9 +77,9 @@ impl MicrofacetDistribution {
             MicrofacetDistribution::TrowbridgeReitz(distribution) => {
                 distribution.get_sample_visible_area()
             }
-            MicrofacetDistribution::DisneyMicrofacet(distribution) => {
-                distribution.get_sample_visible_area()
-            }
+            // MicrofacetDistribution::DisneyMicrofacet(distribution) => {
+            //     distribution.get_sample_visible_area()
+            // }
         }
     }
 }

@@ -57,7 +57,7 @@ impl PlasticMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -81,46 +81,41 @@ impl PlasticMaterial {
             .evaluate(si)
             .clamp(0.0 as Float, std::f32::INFINITY as Float);
         let mut rough: Float = self.roughness.evaluate(si);
-        si.bsdf = Some(Bsdf::new(si, 1.0));
-        if let Some(bsdf) = &mut si.bsdf {
-            let mut bxdf_idx: usize = 0;
-            // initialize diffuse component of plastic material
-            if !kd.is_black() {
-                if use_scale {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::LambertianRefl(LambertianReflection::new(kd, Some(sc)));
-                    bxdf_idx += 1;
-                } else {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::LambertianRefl(LambertianReflection::new(kd, None));
-                    bxdf_idx += 1;
-                }
-            }
-            // initialize specular component of plastic material
-            if !ks.is_black() {
-                let fresnel = Fresnel::Dielectric(FresnelDielectric {
-                    eta_i: 1.5 as Float,
-                    eta_t: 1.0 as Float,
-                });
-                // create microfacet distribution _distrib_ for plastic material
-                if self.remap_roughness {
-                    rough = TrowbridgeReitzDistribution::roughness_to_alpha(rough);
-                }
-                let distrib = MicrofacetDistribution::TrowbridgeReitz(
-                    TrowbridgeReitzDistribution::new(rough, rough, true),
-                );
-                if use_scale {
-                    bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
-                        ks,
-                        distrib,
-                        fresnel,
-                        Some(sc),
-                    ));
-                } else {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::MicrofacetRefl(MicrofacetReflection::new(ks, distrib, fresnel, None));
-                }
+        let mut bsdf = Bsdf::new(si, 1.0);
+        let mut bxdf_idx: usize = 0;
+        // initialize diffuse component of plastic material
+        if !kd.is_black() {
+            if use_scale {
+                bsdf.bxdfs[bxdf_idx] =
+                    Bxdf::LambertianRefl(LambertianReflection::new(kd, Some(sc)));
+                bxdf_idx += 1;
+            } else {
+                bsdf.bxdfs[bxdf_idx] = Bxdf::LambertianRefl(LambertianReflection::new(kd, None));
+                bxdf_idx += 1;
             }
         }
+        // initialize specular component of plastic material
+        if !ks.is_black() {
+            let fresnel = Fresnel::Dielectric(FresnelDielectric {
+                eta_i: 1.5 as Float,
+                eta_t: 1.0 as Float,
+            });
+            // create microfacet distribution _distrib_ for plastic material
+            if self.remap_roughness {
+                rough = TrowbridgeReitzDistribution::roughness_to_alpha(rough);
+            }
+            let distrib = MicrofacetDistribution::TrowbridgeReitz(
+                TrowbridgeReitzDistribution::new(rough, rough, true),
+            );
+            if use_scale {
+                bsdf.bxdfs[bxdf_idx] =
+                    Bxdf::MicrofacetRefl(MicrofacetReflection::new(ks, distrib, fresnel, Some(sc)));
+            } else {
+                bsdf.bxdfs[bxdf_idx] =
+                    Bxdf::MicrofacetRefl(MicrofacetReflection::new(ks, distrib, fresnel, None));
+            }
+        }
+        arena.push(bsdf);
+        si.bsdf = Some(arena.len() - 1);
     }
 }

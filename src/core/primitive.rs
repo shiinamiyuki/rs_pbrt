@@ -13,6 +13,7 @@ use crate::core::light::Light;
 use crate::core::material::{Material, TransportMode};
 use crate::core::medium::{Medium, MediumInterface};
 use crate::core::pbrt::Float;
+use crate::core::reflection::Bsdf;
 use crate::core::shape::Shape;
 use crate::core::transform::{AnimatedTransform, Transform};
 
@@ -75,12 +76,14 @@ impl Primitive {
     pub fn compute_scattering_functions(
         &self,
         isect: &mut SurfaceInteraction,
+        arena: &mut Vec<Bsdf>,
         mode: TransportMode,
         allow_multiple_lobes: bool,
     ) {
         if let Some(ref material) = self.get_material() {
             material.compute_scattering_functions(
                 isect,
+                arena,
                 mode,
                 allow_multiple_lobes,
                 self.get_material(),

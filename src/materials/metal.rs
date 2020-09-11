@@ -144,7 +144,7 @@ impl MetalMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -183,24 +183,24 @@ impl MetalMaterial {
         let distrib = MicrofacetDistribution::TrowbridgeReitz(TrowbridgeReitzDistribution::new(
             u_rough, v_rough, true,
         ));
-        si.bsdf = Some(Bsdf::new(si, 1.0));
-        if let Some(bsdf) = &mut si.bsdf {
-            let bxdf_idx: usize = 0;
-            if use_scale {
-                bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
-                    Spectrum::new(1.0 as Float),
-                    distrib,
-                    fr_mf,
-                    Some(sc),
-                ));
-            } else {
-                bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
-                    Spectrum::new(1.0 as Float),
-                    distrib,
-                    fr_mf,
-                    None,
-                ));
-            }
+        let mut bsdf = Bsdf::new(si, 1.0);
+        let bxdf_idx: usize = 0;
+        if use_scale {
+            bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                Spectrum::new(1.0 as Float),
+                distrib,
+                fr_mf,
+                Some(sc),
+            ));
+        } else {
+            bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                Spectrum::new(1.0 as Float),
+                distrib,
+                fr_mf,
+                None,
+            ));
         }
+        arena.push(bsdf);
+        si.bsdf = Some(arena.len() - 1);
     }
 }

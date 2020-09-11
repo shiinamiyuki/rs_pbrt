@@ -8,7 +8,7 @@ use crate::core::interaction::{Interaction, InteractionCommon, SurfaceInteractio
 use crate::core::light::VisibilityTester;
 use crate::core::material::TransportMode;
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::reflection::BxdfType;
+use crate::core::reflection::{Bsdf, BxdfType};
 use crate::core::sampler::Sampler;
 use crate::core::scene::Scene;
 
@@ -44,7 +44,7 @@ impl WhittedIntegrator {
         ray: &mut Ray,
         scene: &Scene,
         sampler: &mut Sampler,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         depth: i32,
     ) -> Spectrum {
         let mut l: Spectrum = Spectrum::default();
@@ -59,11 +59,11 @@ impl WhittedIntegrator {
 
             // compute scattering functions for surface interaction
             let mode: TransportMode = TransportMode::Radiance;
-            isect.compute_scattering_functions(ray, false, mode);
+            isect.compute_scattering_functions(ray, arena, false, mode);
             // if (!isect.bsdf)
             if let Some(ref _bsdf) = isect.bsdf {
             } else {
-                return self.li(&mut isect.spawn_ray(&ray.d), scene, sampler, depth);
+                return self.li(&mut isect.spawn_ray(&ray.d), scene, sampler, arena, depth);
             }
             // compute emitted light if ray hit an area light source
             l += isect.le(&wo);
@@ -85,7 +85,7 @@ impl WhittedIntegrator {
                 if li.is_black() || pdf == 0.0 as Float {
                     continue;
                 }
-                if let Some(ref bsdf) = isect.bsdf {
+                if let Some(ref bsdf) = isect.get_bsdf(arena) {
                     let bsdf_flags: u8 = BxdfType::BsdfAll as u8;
                     let f: Spectrum = bsdf.f(&wo, &wi, bsdf_flags);
                     if !f.is_black() && visibility.unoccluded(scene) {
@@ -97,14 +97,8 @@ impl WhittedIntegrator {
             }
             if depth as u32 + 1 < self.max_depth {
                 // trace rays for specular reflection and refraction
-                l += self.specular_reflect(
-                    ray, &isect, scene, sampler, // arena,
-                    depth,
-                );
-                l += self.specular_transmit(
-                    ray, &isect, scene, sampler, // arena,
-                    depth,
-                );
+                l += self.specular_reflect(ray, &isect, scene, sampler, arena, depth);
+                l += self.specular_transmit(ray, &isect, scene, sampler, arena, depth);
             }
             l
         } else {
@@ -129,7 +123,7 @@ impl WhittedIntegrator {
         isect: &SurfaceInteraction,
         scene: &Scene,
         sampler: &mut Sampler,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         depth: i32,
     ) -> Spectrum {
         // compute specular reflection direction _wi_ and BSDF value
@@ -140,7 +134,7 @@ impl WhittedIntegrator {
         let mut sampled_type: u8 = 0_u8;
         let bsdf_flags: u8 = BxdfType::BsdfReflection as u8 | BxdfType::BsdfSpecular as u8;
         let f: Spectrum;
-        if let Some(ref bsdf) = isect.bsdf {
+        if let Some(ref bsdf) = isect.get_bsdf(arena) {
             f = bsdf.sample_f(
                 &wo,
                 &mut wi,
@@ -174,7 +168,7 @@ impl WhittedIntegrator {
                     };
                     rd.differential = Some(diff);
                 }
-                f * self.li(&mut rd, scene, sampler, depth + 1)
+                f * self.li(&mut rd, scene, sampler, arena, depth + 1)
                     * Spectrum::new(vec3_abs_dot_nrmf(&wi, &ns) / pdf)
             } else {
                 Spectrum::new(0.0)
@@ -189,7 +183,7 @@ impl WhittedIntegrator {
         isect: &SurfaceInteraction,
         scene: &Scene,
         sampler: &mut Sampler,
-        // arena: &mut Arena,
+        arena: &mut Vec<Bsdf>,
         depth: i32,
     ) -> Spectrum {
         let wo: Vector3f = isect.common.wo;
@@ -200,7 +194,7 @@ impl WhittedIntegrator {
         let mut sampled_type: u8 = 0_u8;
         let bsdf_flags: u8 = BxdfType::BsdfTransmission as u8 | BxdfType::BsdfSpecular as u8;
         let f: Spectrum;
-        if let Some(ref bsdf) = isect.bsdf {
+        if let Some(ref bsdf) = isect.get_bsdf(arena) {
             f = bsdf.sample_f(
                 &wo,
                 &mut wi,
@@ -241,7 +235,7 @@ impl WhittedIntegrator {
                     };
                     rd.differential = Some(diff);
                 }
-                f * self.li(&mut rd, scene, sampler, depth + 1)
+                f * self.li(&mut rd, scene, sampler, arena, depth + 1)
                     * Spectrum::new(vec3_abs_dot_nrmf(&wi, &ns) / pdf)
             } else {
                 Spectrum::new(0.0)
