@@ -88,8 +88,6 @@ impl SubstrateMaterial {
         let mut roughu: Float = self.nu.evaluate(si);
         let mut roughv: Float = self.nv.evaluate(si);
         let mut bsdf = Bsdf::new(si, 1.0);
-        si.bsdf = Some(arena.len() - 1);
-        let bxdf_idx: usize = 0;
         if !d.is_black() || !s.is_black() {
             if self.remap_roughness {
                 roughu = TrowbridgeReitzDistribution::roughness_to_alpha(roughu);
@@ -100,10 +98,14 @@ impl SubstrateMaterial {
                     TrowbridgeReitzDistribution::new(roughu, roughv, true),
                 ));
             if use_scale {
-                bsdf.bxdfs[bxdf_idx] =
-                    Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, Some(sc)));
+                bsdf.add(Bxdf::FresnelBlnd(FresnelBlend::new(
+                    d,
+                    s,
+                    distrib,
+                    Some(sc),
+                )));
             } else {
-                bsdf.bxdfs[bxdf_idx] = Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, None));
+                bsdf.add(Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, None)));
             }
         }
         arena.push(bsdf);

@@ -82,16 +82,15 @@ impl PlasticMaterial {
             .clamp(0.0 as Float, std::f32::INFINITY as Float);
         let mut rough: Float = self.roughness.evaluate(si);
         let mut bsdf = Bsdf::new(si, 1.0);
-        let mut bxdf_idx: usize = 0;
         // initialize diffuse component of plastic material
         if !kd.is_black() {
             if use_scale {
-                bsdf.bxdfs[bxdf_idx] =
-                    Bxdf::LambertianRefl(LambertianReflection::new(kd, Some(sc)));
-                bxdf_idx += 1;
+                bsdf.add(Bxdf::LambertianRefl(LambertianReflection::new(
+                    kd,
+                    Some(sc),
+                )));
             } else {
-                bsdf.bxdfs[bxdf_idx] = Bxdf::LambertianRefl(LambertianReflection::new(kd, None));
-                bxdf_idx += 1;
+                bsdf.add(Bxdf::LambertianRefl(LambertianReflection::new(kd, None)));
             }
         }
         // initialize specular component of plastic material
@@ -108,11 +107,16 @@ impl PlasticMaterial {
                 TrowbridgeReitzDistribution::new(rough, rough, true),
             );
             if use_scale {
-                bsdf.bxdfs[bxdf_idx] =
-                    Bxdf::MicrofacetRefl(MicrofacetReflection::new(ks, distrib, fresnel, Some(sc)));
+                bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                    ks,
+                    distrib,
+                    fresnel,
+                    Some(sc),
+                )));
             } else {
-                bsdf.bxdfs[bxdf_idx] =
-                    Bxdf::MicrofacetRefl(MicrofacetReflection::new(ks, distrib, fresnel, None));
+                bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                    ks, distrib, fresnel, None,
+                )));
             }
         }
         arena.push(bsdf);

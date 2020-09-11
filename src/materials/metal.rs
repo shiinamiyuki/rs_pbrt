@@ -184,21 +184,20 @@ impl MetalMaterial {
             u_rough, v_rough, true,
         ));
         let mut bsdf = Bsdf::new(si, 1.0);
-        let bxdf_idx: usize = 0;
         if use_scale {
-            bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+            bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                 Spectrum::new(1.0 as Float),
                 distrib,
                 fr_mf,
                 Some(sc),
-            ));
+            )));
         } else {
-            bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+            bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                 Spectrum::new(1.0 as Float),
                 distrib,
                 fr_mf,
                 None,
-            ));
+            )));
         }
         arena.push(bsdf);
         si.bsdf = Some(arena.len() - 1);

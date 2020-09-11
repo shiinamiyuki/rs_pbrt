@@ -72,13 +72,18 @@ impl FourierMaterial {
             Material::bump(bump, si);
         }
         let mut bsdf = Bsdf::new(si, 1.0);
-        let bxdf_idx: usize = 0;
         if use_scale {
-            bsdf.bxdfs[bxdf_idx] =
-                Bxdf::Fourier(FourierBSDF::new(self.bsdf_table.clone(), mode, Some(sc)));
+            bsdf.add(Bxdf::Fourier(FourierBSDF::new(
+                self.bsdf_table.clone(),
+                mode,
+                Some(sc),
+            )));
         } else {
-            bsdf.bxdfs[bxdf_idx] =
-                Bxdf::Fourier(FourierBSDF::new(self.bsdf_table.clone(), mode, None));
+            bsdf.add(Bxdf::Fourier(FourierBSDF::new(
+                self.bsdf_table.clone(),
+                mode,
+                None,
+            )));
         }
         arena.push(bsdf);
         si.bsdf = Some(arena.len() - 1);

@@ -103,35 +103,45 @@ impl TranslucentMaterial {
             .clamp(0.0 as Float, std::f32::INFINITY as Float);
         let mut rough: Float = self.roughness.evaluate(si);
         let mut bsdf = Bsdf::new(si, eta);
-        si.bsdf = Some(arena.len() - 1);
-        let mut bxdf_idx: usize = 0;
         if !kd.is_black() {
             if !r.is_black() {
                 if use_scale {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::LambertianRefl(LambertianReflection::new(r * kd, Some(sc)));
-                    bxdf_idx += 1;
+                    bsdf.add(Bxdf::LambertianRefl(LambertianReflection::new(
+                        r * kd,
+                        Some(sc),
+                    )));
                 } else {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::LambertianRefl(LambertianReflection::new(r * kd, None));
-                    bxdf_idx += 1;
+                    bsdf.add(Bxdf::LambertianRefl(LambertianReflection::new(
+                        r * kd,
+                        None,
+                    )));
                 }
             }
             if !t.is_black() {
                 if use_scale {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::LambertianTrans(LambertianTransmission::new(t * kd, Some(sc)));
-                    bxdf_idx += 1;
+                    bsdf.add(Bxdf::LambertianTrans(LambertianTransmission::new(
+                        t * kd,
+                        Some(sc),
+                    )));
                 } else {
-                    bsdf.bxdfs[bxdf_idx] =
-                        Bxdf::LambertianTrans(LambertianTransmission::new(t * kd, None));
-                    bxdf_idx += 1;
+                    bsdf.add(Bxdf::LambertianTrans(LambertianTransmission::new(
+                        t * kd,
+                        None,
+                    )));
                 }
             }
         }
-        if !ks.is_black() && (!r.is_black() || !t.is_black()) {
-            if self.remap_roughness {
-                rough = TrowbridgeReitzDistribution::roughness_to_alpha(rough);
+        if !t.is_black() {
+            if use_scale {
+                bsdf.add(Bxdf::LambertianTrans(LambertianTransmission::new(
+                    t * kd,
+                    Some(sc),
+                )));
+            } else {
+                bsdf.add(Bxdf::LambertianTrans(LambertianTransmission::new(
+                    t * kd,
+                    None,
+                )));
             }
             let distrib = MicrofacetDistribution::TrowbridgeReitz(
                 TrowbridgeReitzDistribution::new(rough, rough, true),
@@ -142,21 +152,19 @@ impl TranslucentMaterial {
                     eta_t: eta,
                 });
                 if use_scale {
-                    bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                    bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                         r * ks,
                         distrib,
                         fresnel,
                         Some(sc),
-                    ));
-                    bxdf_idx += 1;
+                    )));
                 } else {
-                    bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                    bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                         r * ks,
                         distrib,
                         fresnel,
                         None,
-                    ));
-                    bxdf_idx += 1;
+                    )));
                 }
             }
             let distrib = MicrofacetDistribution::TrowbridgeReitz(
@@ -164,23 +172,23 @@ impl TranslucentMaterial {
             );
             if !t.is_black() {
                 if use_scale {
-                    bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                    bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
                         t * ks,
                         distrib,
                         1.0,
                         eta,
                         mode,
                         Some(sc),
-                    ));
+                    )));
                 } else {
-                    bsdf.bxdfs[bxdf_idx] = Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                    bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
                         t * ks,
                         distrib,
                         1.0,
                         eta,
                         mode,
                         None,
-                    ));
+                    )));
                 }
             }
         }
