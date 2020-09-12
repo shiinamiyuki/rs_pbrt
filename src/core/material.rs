@@ -11,7 +11,7 @@ use crate::core::interaction::SurfaceInteraction;
 use crate::core::pbrt::{Float, Spectrum};
 use crate::core::reflection::{Bsdf, Bxdf};
 use crate::core::texture::Texture;
-// use crate::materials::disney::DisneyMaterial;
+use crate::materials::disney::DisneyMaterial;
 // use crate::materials::fourier::FourierMaterial;
 // use crate::materials::glass::GlassMaterial;
 // use crate::materials::hair::HairMaterial;
@@ -37,7 +37,7 @@ pub enum TransportMode {
 }
 
 pub enum Material {
-    // Disney(Box<DisneyMaterial>),
+    Disney(Box<DisneyMaterial>),
     // Fourier(Box<FourierMaterial>),
     // Glass(Box<GlassMaterial>),
     // Hair(Box<HairMaterial>),
@@ -71,14 +71,15 @@ impl Material {
         scale: Option<Spectrum>,
     ) {
         match self {
-            // Material::Disney(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
+            Material::Disney(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
             // Material::Fourier(material) => material.compute_scattering_functions(
             //     si,
             //     arena,

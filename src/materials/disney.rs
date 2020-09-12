@@ -81,6 +81,8 @@ impl DisneyMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -123,203 +125,223 @@ impl DisneyMaterial {
         let spec_tint = self.specular_tint.evaluate(si);
         let cc = self.clearcoat.evaluate(si);
         let gloss: Float = lerp(self.clearcoat_gloss.evaluate(si), 0.1, 0.001);
-        si.bsdf = Some(Bsdf::new(si, 1.0));
-        if let Some(bsdf) = &mut si.bsdf {
-            if diffuse_weight > 0.0 {
-                if self.thin {
-                    // Blend between DisneyDiffuse and fake subsurface based on flatness. Additionally,
-                    // weight using diff_trans.
-                    if use_scale {
-                        bsdf.add(Bxdf::DisDiff(DisneyDiffuse::new(
-                            diffuse_weight * (1.0 - flat) * (1.0 - dt) * c,
-                            Some(sc),
-                        )));
-                        bsdf.add(Bxdf::DisSS(DisneyFakeSS::new(
-                            diffuse_weight * flat * (1.0 - dt) * c,
-                            rough,
-                            Some(sc),
-                        )));
-                    } else {
-                        bsdf.add(Bxdf::DisDiff(DisneyDiffuse::new(
-                            diffuse_weight * (1.0 - flat) * (1.0 - dt) * c,
-                            None,
-                        )));
-                        bsdf.add(Bxdf::DisSS(DisneyFakeSS::new(
-                            diffuse_weight * flat * (1.0 - dt) * c,
-                            rough,
-                            None,
-                        )));
-                    }
-                } else if sd.is_black() {
-                    // No subsurface scattering; use regular (Fresnel modified) diffuse.
-                    if use_scale {
-                        bsdf.add(Bxdf::DisDiff(DisneyDiffuse::new(
-                            diffuse_weight * c,
-                            Some(sc),
-                        )));
-                    } else {
-                        bsdf.add(Bxdf::DisDiff(DisneyDiffuse::new(diffuse_weight * c, None)));
-                    }
-                } else {
-                    // Use a BSSRDF instead.
-                    if use_scale {
-                        bsdf.add(Bxdf::SpecTrans(SpecularTransmission::new(
-                            Spectrum::from(1.0),
-                            1.0,
-                            e,
-                            mode,
-                            Some(sc),
-                        )));
-                    } else {
-                        bsdf.add(Bxdf::SpecTrans(SpecularTransmission::new(
-                            Spectrum::from(1.0),
-                            1.0,
-                            e,
-                            mode,
-                            None,
-                        )));
-                    }
-                    // TODO: BSSRDF
-                }
-
-                // Retro-reflection.
+        let mut bsdf = Bsdf::new(si, 1.0);
+        if diffuse_weight > 0.0 {
+            if self.thin {
+                // Blend between DisneyDiffuse and fake subsurface based on flatness. Additionally,
+                // weight using diff_trans.
                 if use_scale {
-                    bsdf.add(Bxdf::DisRetro(DisneyRetro::new(
-                        diffuse_weight * c,
+                    arena_bxdf.push(Bxdf::DisDiff(DisneyDiffuse::new(
+                        diffuse_weight * (1.0 - flat) * (1.0 - dt) * c,
+                        Some(sc),
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                    arena_bxdf.push(Bxdf::DisSS(DisneyFakeSS::new(
+                        diffuse_weight * flat * (1.0 - dt) * c,
                         rough,
                         Some(sc),
                     )));
+                    bsdf.add(arena_bxdf.len() - 1);
                 } else {
-                    bsdf.add(Bxdf::DisRetro(DisneyRetro::new(
-                        diffuse_weight * c,
+                    arena_bxdf.push(Bxdf::DisDiff(DisneyDiffuse::new(
+                        diffuse_weight * (1.0 - flat) * (1.0 - dt) * c,
+                        None,
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                    arena_bxdf.push(Bxdf::DisSS(DisneyFakeSS::new(
+                        diffuse_weight * flat * (1.0 - dt) * c,
                         rough,
                         None,
                     )));
+                    bsdf.add(arena_bxdf.len() - 1);
                 }
-                // Sheen (if enabled).
-                if sheen_weight > 0.0 {
-                    if use_scale {
-                        bsdf.add(Bxdf::DisSheen(DisneySheen::new(
-                            diffuse_weight * sheen_weight * c_sheen,
-                            Some(sc),
-                        )));
-                    } else {
-                        bsdf.add(Bxdf::DisSheen(DisneySheen::new(
-                            diffuse_weight * sheen_weight * c_sheen,
-                            None,
-                        )));
-                    }
+            } else if sd.is_black() {
+                // No subsurface scattering; use regular (Fresnel modified) diffuse.
+                if use_scale {
+                    arena_bxdf.push(Bxdf::DisDiff(DisneyDiffuse::new(
+                        diffuse_weight * c,
+                        Some(sc),
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                } else {
+                    arena_bxdf.push(Bxdf::DisDiff(DisneyDiffuse::new(diffuse_weight * c, None)));
+                    bsdf.add(arena_bxdf.len() - 1);
                 }
+            } else {
+                // Use a BSSRDF instead.
+                if use_scale {
+                    arena_bxdf.push(Bxdf::SpecTrans(SpecularTransmission::new(
+                        Spectrum::from(1.0),
+                        1.0,
+                        e,
+                        mode,
+                        Some(sc),
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                } else {
+                    arena_bxdf.push(Bxdf::SpecTrans(SpecularTransmission::new(
+                        Spectrum::from(1.0),
+                        1.0,
+                        e,
+                        mode,
+                        None,
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                }
+                // TODO: BSSRDF
             }
 
-            // Create the microfacet distribution for metallic and/or specular transmission.
-            let ax = Float::max(0.001, sqr(rough) / aspect);
-            let ay = Float::max(0.001, sqr(rough) * aspect);
-            let distrib =
-                MicrofacetDistribution::DisneyMicrofacet(DisneyMicrofacetDistribution::new(ax, ay));
-
-            // Specular is Trowbridge-Reitz with a modified Fresnel function
-            let cspec0 = lerp(
-                metallic_weight,
-                schlick_r0_from_eta(e) * lerp(spec_tint, Spectrum::new(1.0), c_tint),
-                c,
-            );
-            let fresnel = Fresnel::Disney(DisneyFresnel::new(cspec0, metallic_weight, e));
+            // Retro-reflection.
             if use_scale {
-                bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
-                    c,
-                    distrib,
-                    fresnel,
+                arena_bxdf.push(Bxdf::DisRetro(DisneyRetro::new(
+                    diffuse_weight * c,
+                    rough,
                     Some(sc),
                 )));
+                bsdf.add(arena_bxdf.len() - 1);
             } else {
-                bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
-                    c, distrib, fresnel, None,
+                arena_bxdf.push(Bxdf::DisRetro(DisneyRetro::new(
+                    diffuse_weight * c,
+                    rough,
+                    None,
                 )));
+                bsdf.add(arena_bxdf.len() - 1);
             }
-            // Clearcoat
-            if cc > 0.0 {
+            // Sheen (if enabled).
+            if sheen_weight > 0.0 {
                 if use_scale {
-                    bsdf.add(Bxdf::DisClearCoat(DisneyClearCoat::new(
-                        cc,
-                        gloss,
+                    arena_bxdf.push(Bxdf::DisSheen(DisneySheen::new(
+                        diffuse_weight * sheen_weight * c_sheen,
                         Some(sc),
                     )));
+                    bsdf.add(arena_bxdf.len() - 1);
                 } else {
-                    bsdf.add(Bxdf::DisClearCoat(DisneyClearCoat::new(cc, gloss, None)));
-                }
-            }
-
-            // BTDF
-            if strans > 0.0 {
-                // Walter et al.'s model, with the provided transmissive term scaled by sqrt(color), so
-                // that after two refractions we're back to the provided color.
-                let t = strans * c.sqrt();
-                if self.thin {
-                    // Scale roughness based on IOR (Burley 2015, Figure 15).
-                    let rscaled = (0.65 * e - 0.35) * rough;
-                    let ax = Float::max(0.001, sqr(rscaled) / aspect);
-                    let ay = Float::max(0.001, sqr(rscaled) * aspect);
-                    let scaled_distrib = MicrofacetDistribution::TrowbridgeReitz(
-                        TrowbridgeReitzDistribution::new(ax, ay, true),
-                    );
-                    if use_scale {
-                        bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
-                            t,
-                            scaled_distrib,
-                            1.0,
-                            e,
-                            mode,
-                            Some(sc),
-                        )));
-                    } else {
-                        bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
-                            t,
-                            scaled_distrib,
-                            1.0,
-                            e,
-                            mode,
-                            None,
-                        )));
-                    }
-                } else {
-                    let distrib = MicrofacetDistribution::DisneyMicrofacet(
-                        DisneyMicrofacetDistribution::new(ax, ay),
-                    );
-                    if use_scale {
-                        bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
-                            t,
-                            distrib,
-                            1.0,
-                            e,
-                            mode,
-                            Some(sc),
-                        )));
-                    } else {
-                        bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
-                            t, distrib, 1.0, e, mode, None,
-                        )));
-                    }
-                }
-            }
-
-            if self.thin {
-                // Lambertian, weighted by (1.0 - diff_trans}
-                if use_scale {
-                    bsdf.add(Bxdf::LambertianTrans(LambertianTransmission::new(
-                        dt * c,
-                        Some(sc),
-                    )));
-                // bxdf_idx += 1;
-                } else {
-                    bsdf.add(Bxdf::LambertianTrans(LambertianTransmission::new(
-                        dt * c,
+                    arena_bxdf.push(Bxdf::DisSheen(DisneySheen::new(
+                        diffuse_weight * sheen_weight * c_sheen,
                         None,
                     )));
-                    // bxdf_idx += 1;
+                    bsdf.add(arena_bxdf.len() - 1);
                 }
             }
         }
+
+        // Create the microfacet distribution for metallic and/or specular transmission.
+        let ax = Float::max(0.001, sqr(rough) / aspect);
+        let ay = Float::max(0.001, sqr(rough) * aspect);
+        let distrib =
+            MicrofacetDistribution::DisneyMicrofacet(DisneyMicrofacetDistribution::new(ax, ay));
+
+        // Specular is Trowbridge-Reitz with a modified Fresnel function
+        let cspec0 = lerp(
+            metallic_weight,
+            schlick_r0_from_eta(e) * lerp(spec_tint, Spectrum::new(1.0), c_tint),
+            c,
+        );
+        let fresnel = Fresnel::Disney(DisneyFresnel::new(cspec0, metallic_weight, e));
+        if use_scale {
+            arena_bxdf.push(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                c,
+                distrib,
+                fresnel,
+                Some(sc),
+            )));
+            bsdf.add(arena_bxdf.len() - 1);
+        } else {
+            arena_bxdf.push(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                c, distrib, fresnel, None,
+            )));
+            bsdf.add(arena_bxdf.len() - 1);
+        }
+        // Clearcoat
+        if cc > 0.0 {
+            if use_scale {
+                arena_bxdf.push(Bxdf::DisClearCoat(DisneyClearCoat::new(
+                    cc,
+                    gloss,
+                    Some(sc),
+                )));
+                bsdf.add(arena_bxdf.len() - 1);
+            } else {
+                arena_bxdf.push(Bxdf::DisClearCoat(DisneyClearCoat::new(cc, gloss, None)));
+                bsdf.add(arena_bxdf.len() - 1);
+            }
+        }
+
+        // BTDF
+        if strans > 0.0 {
+            // Walter et al.'s model, with the provided transmissive term scaled by sqrt(color), so
+            // that after two refractions we're back to the provided color.
+            let t = strans * c.sqrt();
+            if self.thin {
+                // Scale roughness based on IOR (Burley 2015, Figure 15).
+                let rscaled = (0.65 * e - 0.35) * rough;
+                let ax = Float::max(0.001, sqr(rscaled) / aspect);
+                let ay = Float::max(0.001, sqr(rscaled) * aspect);
+                let scaled_distrib = MicrofacetDistribution::TrowbridgeReitz(
+                    TrowbridgeReitzDistribution::new(ax, ay, true),
+                );
+                if use_scale {
+                    arena_bxdf.push(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                        t,
+                        scaled_distrib,
+                        1.0,
+                        e,
+                        mode,
+                        Some(sc),
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                } else {
+                    arena_bxdf.push(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                        t,
+                        scaled_distrib,
+                        1.0,
+                        e,
+                        mode,
+                        None,
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                }
+            } else {
+                let distrib = MicrofacetDistribution::DisneyMicrofacet(
+                    DisneyMicrofacetDistribution::new(ax, ay),
+                );
+                if use_scale {
+                    arena_bxdf.push(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                        t,
+                        distrib,
+                        1.0,
+                        e,
+                        mode,
+                        Some(sc),
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                } else {
+                    arena_bxdf.push(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                        t, distrib, 1.0, e, mode, None,
+                    )));
+                    bsdf.add(arena_bxdf.len() - 1);
+                }
+            }
+        }
+
+        if self.thin {
+            // Lambertian, weighted by (1.0 - diff_trans}
+            if use_scale {
+                arena_bxdf.push(Bxdf::LambertianTrans(LambertianTransmission::new(
+                    dt * c,
+                    Some(sc),
+                )));
+                bsdf.add(arena_bxdf.len() - 1);
+            } else {
+                arena_bxdf.push(Bxdf::LambertianTrans(LambertianTransmission::new(
+                    dt * c,
+                    None,
+                )));
+                bsdf.add(arena_bxdf.len() - 1);
+            }
+        }
+        arena_bsdf.push(bsdf);
+        si.bsdf = Some(arena_bsdf.len() - 1);
     }
 }
 // DisneyDiffuse
