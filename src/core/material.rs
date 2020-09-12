@@ -16,9 +16,9 @@ use crate::materials::fourier::FourierMaterial;
 use crate::materials::glass::GlassMaterial;
 use crate::materials::hair::HairMaterial;
 use crate::materials::matte::MatteMaterial;
-// use crate::materials::metal::MetalMaterial;
-// use crate::materials::mirror::MirrorMaterial;
-// use crate::materials::mixmat::MixMaterial;
+use crate::materials::metal::MetalMaterial;
+use crate::materials::mirror::MirrorMaterial;
+use crate::materials::mixmat::MixMaterial;
 // use crate::materials::plastic::PlasticMaterial;
 // use crate::materials::substrate::SubstrateMaterial;
 // use crate::materials::subsurface::SubsurfaceMaterial;
@@ -42,9 +42,9 @@ pub enum Material {
     Glass(Box<GlassMaterial>),
     Hair(Box<HairMaterial>),
     Matte(Box<MatteMaterial>),
-    // Metal(Box<MetalMaterial>),
-    // Mirror(Box<MirrorMaterial>),
-    // Mix(Box<MixMaterial>),
+    Metal(Box<MetalMaterial>),
+    Mirror(Box<MirrorMaterial>),
+    Mix(Box<MixMaterial>),
     // Plastic(Box<PlasticMaterial>),
     // Substrate(Box<SubstrateMaterial>),
     // Subsurface(Box<SubsurfaceMaterial>),
@@ -116,30 +116,33 @@ impl Material {
                 mat,
                 scale,
             ),
-            // Material::Metal(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
-            // Material::Mirror(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
-            // Material::Mix(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
+            Material::Metal(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Mirror(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Mix(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
             // Material::Plastic(material) => material.compute_scattering_functions(
             //     si,
             //     arena,

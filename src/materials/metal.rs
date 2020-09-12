@@ -144,7 +144,8 @@ impl MetalMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -185,21 +186,23 @@ impl MetalMaterial {
         ));
         let mut bsdf = Bsdf::new(si, 1.0);
         if use_scale {
-            bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+            arena_bxdf.push(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                 Spectrum::new(1.0 as Float),
                 distrib,
                 fr_mf,
                 Some(sc),
             )));
+            bsdf.add(arena_bxdf.len() - 1);
         } else {
-            bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+            arena_bxdf.push(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                 Spectrum::new(1.0 as Float),
                 distrib,
                 fr_mf,
                 None,
             )));
+            bsdf.add(arena_bxdf.len() - 1);
         }
-        arena.push(bsdf);
-        si.bsdf = Some(arena.len() - 1);
+        arena_bsdf.push(bsdf);
+        si.bsdf = Some(arena_bsdf.len() - 1);
     }
 }
