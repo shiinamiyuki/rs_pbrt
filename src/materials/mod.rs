@@ -25,9 +25,9 @@
 //! ![SubstrateMaterial](/doc/img/ganesha_pbrt_rust.png)
 
 pub mod disney;
-// pub mod fourier;
-// pub mod glass;
-// pub mod hair;
+pub mod fourier;
+pub mod glass;
+pub mod hair;
 pub mod matte;
 // pub mod metal;
 // pub mod mirror;

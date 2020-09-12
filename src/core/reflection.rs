@@ -35,7 +35,7 @@ use crate::core::sampling::cosine_sample_hemisphere;
 use crate::materials::disney::{
     DisneyClearCoat, DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen,
 };
-// use crate::materials::hair::HairBSDF;
+use crate::materials::hair::HairBSDF;
 
 const MAX_BXDFS: u8 = 8_u8;
 
@@ -503,7 +503,7 @@ pub enum Bxdf {
     DisSheen(DisneySheen),
     DisClearCoat(DisneyClearCoat),
     // hair.rs
-    // Hair(HairBSDF),
+    Hair(HairBSDF),
 }
 
 impl Bxdf {
@@ -526,7 +526,7 @@ impl Bxdf {
             Bxdf::DisRetro(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
             Bxdf::DisSheen(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
             Bxdf::DisClearCoat(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
-            // Bxdf::Hair(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
+            Bxdf::Hair(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
         }
     }
     pub fn f(&self, wo: &Vector3f, wi: &Vector3f) -> Spectrum {
@@ -548,7 +548,7 @@ impl Bxdf {
             Bxdf::DisRetro(bxdf) => bxdf.f(wo, wi),
             Bxdf::DisSheen(bxdf) => bxdf.f(wo, wi),
             Bxdf::DisClearCoat(bxdf) => bxdf.f(wo, wi),
-            // Bxdf::Hair(bxdf) => bxdf.f(wo, wi),
+            Bxdf::Hair(bxdf) => bxdf.f(wo, wi),
         }
     }
     /// Sample the BxDF for the given outgoing direction, using the given pair of uniform samples.
@@ -581,7 +581,7 @@ impl Bxdf {
             Bxdf::DisRetro(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
             Bxdf::DisSheen(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
             Bxdf::DisClearCoat(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
-            // Bxdf::Hair(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
+            Bxdf::Hair(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
         }
     }
     fn default_sample_f(
@@ -621,7 +621,7 @@ impl Bxdf {
             Bxdf::DisRetro(_bxdf) => self.default_pdf(wo, wi),
             Bxdf::DisSheen(_bxdf) => self.default_pdf(wo, wi),
             Bxdf::DisClearCoat(bxdf) => bxdf.pdf(wo, wi),
-            // Bxdf::Hair(bxdf) => bxdf.pdf(wo, wi),
+            Bxdf::Hair(bxdf) => bxdf.pdf(wo, wi),
         }
     }
     fn default_pdf(&self, wo: &Vector3f, wi: &Vector3f) -> Float {
@@ -650,7 +650,7 @@ impl Bxdf {
             Bxdf::DisRetro(bxdf) => bxdf.get_type(),
             Bxdf::DisSheen(bxdf) => bxdf.get_type(),
             Bxdf::DisClearCoat(bxdf) => bxdf.get_type(),
-            // Bxdf::Hair(bxdf) => bxdf.get_type(),
+            Bxdf::Hair(bxdf) => bxdf.get_type(),
         }
     }
 }

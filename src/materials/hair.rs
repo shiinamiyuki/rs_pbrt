@@ -126,7 +126,8 @@ impl HairMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -166,12 +167,14 @@ impl HairMaterial {
         let h: Float = -1.0 as Float + 2.0 as Float * si.uv[XYEnum::Y];
         let mut bsdf = Bsdf::new(si, 1.0);
         if use_scale {
-            bsdf.add(Bxdf::Hair(HairBSDF::new(h, e, sig_a, bm, bn, a, Some(sc))));
+            arena_bxdf.push(Bxdf::Hair(HairBSDF::new(h, e, sig_a, bm, bn, a, Some(sc))));
+            bsdf.add(arena_bxdf.len() - 1);
         } else {
-            bsdf.add(Bxdf::Hair(HairBSDF::new(h, e, sig_a, bm, bn, a, None)));
+            arena_bxdf.push(Bxdf::Hair(HairBSDF::new(h, e, sig_a, bm, bn, a, None)));
+            bsdf.add(arena_bxdf.len() - 1);
         }
-        arena.push(bsdf);
-        si.bsdf = Some(arena.len() - 1);
+        arena_bsdf.push(bsdf);
+        si.bsdf = Some(arena_bsdf.len() - 1);
     }
 }
 

@@ -56,7 +56,8 @@ impl FourierMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -73,19 +74,21 @@ impl FourierMaterial {
         }
         let mut bsdf = Bsdf::new(si, 1.0);
         if use_scale {
-            bsdf.add(Bxdf::Fourier(FourierBSDF::new(
+            arena_bxdf.push(Bxdf::Fourier(FourierBSDF::new(
                 self.bsdf_table.clone(),
                 mode,
                 Some(sc),
             )));
+            bsdf.add(arena_bxdf.len() - 1);
         } else {
-            bsdf.add(Bxdf::Fourier(FourierBSDF::new(
+            arena_bxdf.push(Bxdf::Fourier(FourierBSDF::new(
                 self.bsdf_table.clone(),
                 mode,
                 None,
             )));
+            bsdf.add(arena_bxdf.len() - 1);
         }
-        arena.push(bsdf);
-        si.bsdf = Some(arena.len() - 1);
+        arena_bsdf.push(bsdf);
+        si.bsdf = Some(arena_bsdf.len() - 1);
     }
 }
