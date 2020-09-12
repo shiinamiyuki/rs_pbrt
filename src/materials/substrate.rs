@@ -62,7 +62,8 @@ impl SubstrateMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -98,17 +99,19 @@ impl SubstrateMaterial {
                     TrowbridgeReitzDistribution::new(roughu, roughv, true),
                 ));
             if use_scale {
-                bsdf.add(Bxdf::FresnelBlnd(FresnelBlend::new(
+                arena_bxdf.push(Bxdf::FresnelBlnd(FresnelBlend::new(
                     d,
                     s,
                     distrib,
                     Some(sc),
                 )));
+                bsdf.add(arena_bxdf.len() - 1);
             } else {
-                bsdf.add(Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, None)));
+                arena_bxdf.push(Bxdf::FresnelBlnd(FresnelBlend::new(d, s, distrib, None)));
+                bsdf.add(arena_bxdf.len() - 1);
             }
         }
-        arena.push(bsdf);
-        si.bsdf = Some(arena.len() - 1);
+        arena_bsdf.push(bsdf);
+        si.bsdf = Some(arena_bsdf.len() - 1);
     }
 }

@@ -19,11 +19,11 @@ use crate::materials::matte::MatteMaterial;
 use crate::materials::metal::MetalMaterial;
 use crate::materials::mirror::MirrorMaterial;
 use crate::materials::mixmat::MixMaterial;
-// use crate::materials::plastic::PlasticMaterial;
-// use crate::materials::substrate::SubstrateMaterial;
-// use crate::materials::subsurface::SubsurfaceMaterial;
-// use crate::materials::translucent::TranslucentMaterial;
-// use crate::materials::uber::UberMaterial;
+use crate::materials::plastic::PlasticMaterial;
+use crate::materials::substrate::SubstrateMaterial;
+use crate::materials::subsurface::SubsurfaceMaterial;
+use crate::materials::translucent::TranslucentMaterial;
+use crate::materials::uber::UberMaterial;
 
 // see material.h
 
@@ -45,11 +45,11 @@ pub enum Material {
     Metal(Box<MetalMaterial>),
     Mirror(Box<MirrorMaterial>),
     Mix(Box<MixMaterial>),
-    // Plastic(Box<PlasticMaterial>),
-    // Substrate(Box<SubstrateMaterial>),
-    // Subsurface(Box<SubsurfaceMaterial>),
-    // Translucent(Box<TranslucentMaterial>),
-    // Uber(Box<UberMaterial>),
+    Plastic(Box<PlasticMaterial>),
+    Substrate(Box<SubstrateMaterial>),
+    Subsurface(Box<SubsurfaceMaterial>),
+    Translucent(Box<TranslucentMaterial>),
+    Uber(Box<UberMaterial>),
 }
 
 /// **Material** defines the interface that material implementations
@@ -143,46 +143,51 @@ impl Material {
                 mat,
                 scale,
             ),
-            // Material::Plastic(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
-            // Material::Substrate(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
-            // Material::Subsurface(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
-            // Material::Translucent(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
-            // Material::Uber(material) => material.compute_scattering_functions(
-            //     si,
-            //     arena,
-            //     mode,
-            //     allow_multiple_lobes,
-            //     mat,
-            //     scale,
-            // ),
+            Material::Plastic(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Substrate(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Subsurface(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Translucent(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
+            Material::Uber(material) => material.compute_scattering_functions(
+                si,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+                mat,
+                scale,
+            ),
         }
     }
     /// Computing the effect of bump mapping at the point being shaded

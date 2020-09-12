@@ -127,7 +127,8 @@ impl SubsurfaceMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         mode: TransportMode,
         allow_multiple_lobes: bool,
         material: Option<Arc<Material>>,
@@ -161,7 +162,7 @@ impl SubsurfaceMaterial {
         let mut bsdf = Bsdf::new(si, self.eta);
         if is_specular && allow_multiple_lobes {
             if use_scale {
-                bsdf.add(Bxdf::FresnelSpec(FresnelSpecular::new(
+                arena_bxdf.push(Bxdf::FresnelSpec(FresnelSpecular::new(
                     r,
                     t,
                     1.0 as Float,
@@ -169,8 +170,9 @@ impl SubsurfaceMaterial {
                     mode,
                     Some(sc),
                 )));
+                bsdf.add(arena_bxdf.len() - 1);
             } else {
-                bsdf.add(Bxdf::FresnelSpec(FresnelSpecular::new(
+                arena_bxdf.push(Bxdf::FresnelSpec(FresnelSpecular::new(
                     r,
                     t,
                     1.0 as Float,
@@ -178,6 +180,7 @@ impl SubsurfaceMaterial {
                     mode,
                     None,
                 )));
+                bsdf.add(arena_bxdf.len() - 1);
             }
         } else {
             if self.remap_roughness {
@@ -191,53 +194,59 @@ impl SubsurfaceMaterial {
                 });
                 if is_specular {
                     if use_scale {
-                        bsdf.add(Bxdf::SpecRefl(SpecularReflection::new(
+                        arena_bxdf.push(Bxdf::SpecRefl(SpecularReflection::new(
                             r,
                             fresnel,
                             Some(sc),
                         )));
+                        bsdf.add(arena_bxdf.len() - 1);
                     } else {
-                        bsdf.add(Bxdf::SpecRefl(SpecularReflection::new(r, fresnel, None)));
+                        arena_bxdf.push(Bxdf::SpecRefl(SpecularReflection::new(r, fresnel, None)));
+                        bsdf.add(arena_bxdf.len() - 1);
                     }
                 } else {
                     let distrib = MicrofacetDistribution::TrowbridgeReitz(
                         TrowbridgeReitzDistribution::new(urough, vrough, true),
                     );
                     if use_scale {
-                        bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                        arena_bxdf.push(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                             r,
                             distrib,
                             fresnel,
                             Some(sc),
                         )));
+                        bsdf.add(arena_bxdf.len() - 1);
                     } else {
-                        bsdf.add(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
+                        arena_bxdf.push(Bxdf::MicrofacetRefl(MicrofacetReflection::new(
                             r, distrib, fresnel, None,
                         )));
+                        bsdf.add(arena_bxdf.len() - 1);
                     }
                 }
             }
             if !t.is_black() {
                 if is_specular {
                     if use_scale {
-                        bsdf.add(Bxdf::SpecTrans(SpecularTransmission::new(
+                        arena_bxdf.push(Bxdf::SpecTrans(SpecularTransmission::new(
                             t,
                             1.0,
                             self.eta,
                             mode,
                             Some(sc),
                         )));
+                        bsdf.add(arena_bxdf.len() - 1);
                     } else {
-                        bsdf.add(Bxdf::SpecTrans(SpecularTransmission::new(
+                        arena_bxdf.push(Bxdf::SpecTrans(SpecularTransmission::new(
                             t, 1.0, self.eta, mode, None,
                         )));
+                        bsdf.add(arena_bxdf.len() - 1);
                     }
                 } else {
                     let distrib = MicrofacetDistribution::TrowbridgeReitz(
                         TrowbridgeReitzDistribution::new(urough, vrough, true),
                     );
                     if use_scale {
-                        bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                        arena_bxdf.push(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
                             t,
                             distrib,
                             1.0,
@@ -245,10 +254,12 @@ impl SubsurfaceMaterial {
                             mode,
                             Some(sc),
                         )));
+                        bsdf.add(arena_bxdf.len() - 1);
                     } else {
-                        bsdf.add(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
+                        arena_bxdf.push(Bxdf::MicrofacetTrans(MicrofacetTransmission::new(
                             t, distrib, 1.0, self.eta, mode, None,
                         )));
+                        bsdf.add(arena_bxdf.len() - 1);
                     }
                 }
             }
@@ -272,7 +283,7 @@ impl SubsurfaceMaterial {
             &sig_s,
             self.table.clone(),
         ));
-        arena.push(bsdf);
-        si.bsdf = Some(arena.len() - 1);
+        arena_bsdf.push(bsdf);
+        si.bsdf = Some(arena_bsdf.len() - 1);
     }
 }

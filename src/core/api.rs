@@ -58,19 +58,19 @@ use crate::lights::infinite::InfiniteAreaLight;
 use crate::lights::point::PointLight;
 use crate::lights::projection::ProjectionLight;
 use crate::lights::spot::SpotLight;
-// use crate::materials::disney::DisneyMaterial;
-// use crate::materials::fourier::FourierMaterial;
-// use crate::materials::glass::GlassMaterial;
-// use crate::materials::hair::HairMaterial;
+use crate::materials::disney::DisneyMaterial;
+use crate::materials::fourier::FourierMaterial;
+use crate::materials::glass::GlassMaterial;
+use crate::materials::hair::HairMaterial;
 use crate::materials::matte::MatteMaterial;
-// use crate::materials::metal::MetalMaterial;
-// use crate::materials::mirror::MirrorMaterial;
-// use crate::materials::mixmat::MixMaterial;
-// use crate::materials::plastic::PlasticMaterial;
-// use crate::materials::substrate::SubstrateMaterial;
-// use crate::materials::subsurface::SubsurfaceMaterial;
-// use crate::materials::translucent::TranslucentMaterial;
-// use crate::materials::uber::UberMaterial;
+use crate::materials::metal::MetalMaterial;
+use crate::materials::mirror::MirrorMaterial;
+use crate::materials::mixmat::MixMaterial;
+use crate::materials::plastic::PlasticMaterial;
+use crate::materials::substrate::SubstrateMaterial;
+use crate::materials::subsurface::SubsurfaceMaterial;
+use crate::materials::translucent::TranslucentMaterial;
+use crate::materials::uber::UberMaterial;
 use crate::media::grid::GridDensityMedium;
 use crate::media::homogeneous::HomogeneousMedium;
 use crate::samplers::halton::HaltonSampler;
@@ -626,58 +626,58 @@ fn create_material(api_state: &ApiState, bsdf_state: &mut BsdfState) -> Option<A
             return None;
         } else if api_state.graphics_state.material == "matte" {
             return Some(MatteMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "plastic" {
-        //     return Some(PlasticMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "translucent" {
-        //     return Some(TranslucentMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "glass" {
-        //     return Some(GlassMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "mirror" {
-        //     return Some(MirrorMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "hair" {
-        //     return Some(HairMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "mix" {
-        //     let m1: String = mp.find_string("namedmaterial1", String::from(""));
-        //     let m2: String = mp.find_string("namedmaterial2", String::from(""));
-        //     let mat1 = match api_state.graphics_state.named_materials.get(&m1) {
-        //         Some(named_material) => named_material,
-        //         None => {
-        //             panic!("Material \"{}\" unknown.", m1);
-        //         }
-        //     };
-        //     let mat2 = match api_state.graphics_state.named_materials.get(&m2) {
-        //         Some(named_material) => named_material,
-        //         None => {
-        //             panic!("Material \"{}\" unknown.", m2);
-        //         }
-        //     };
-        //     let scale: Arc<dyn Texture<Spectrum> + Send + Sync> =
-        //         mp.get_spectrum_texture("amount", Spectrum::new(0.5));
-        //     if let Some(m1) = mat1 {
-        //         if let Some(m2) = mat2 {
-        //             let mix = Arc::new(Material::Mix(Box::new(MixMaterial::new(
-        //                 m1.clone(),
-        //                 m2.clone(),
-        //                 scale,
-        //             ))));
-        //             return Some(mix);
-        //         }
-        //     }
-        //     return None;
-        // } else if api_state.graphics_state.material == "metal" {
-        //     return Some(MetalMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "substrate" {
-        //     return Some(SubstrateMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "uber" {
-        //     return Some(UberMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "subsurface" {
-        //     return Some(SubsurfaceMaterial::create(&mut mp));
-        // } else if api_state.graphics_state.material == "kdsubsurface" {
-        //     println!("TODO: CreateKdsubsurfaceMaterial");
-        // } else if api_state.graphics_state.material == "fourier" {
-        //     return Some(FourierMaterial::create(&mut mp, bsdf_state));
-        // } else if api_state.graphics_state.material == "disney" {
-        //     return Some(DisneyMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "plastic" {
+            return Some(PlasticMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "translucent" {
+            return Some(TranslucentMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "glass" {
+            return Some(GlassMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "mirror" {
+            return Some(MirrorMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "hair" {
+            return Some(HairMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "mix" {
+            let m1: String = mp.find_string("namedmaterial1", String::from(""));
+            let m2: String = mp.find_string("namedmaterial2", String::from(""));
+            let mat1 = match api_state.graphics_state.named_materials.get(&m1) {
+                Some(named_material) => named_material,
+                None => {
+                    panic!("Material \"{}\" unknown.", m1);
+                }
+            };
+            let mat2 = match api_state.graphics_state.named_materials.get(&m2) {
+                Some(named_material) => named_material,
+                None => {
+                    panic!("Material \"{}\" unknown.", m2);
+                }
+            };
+            let scale: Arc<dyn Texture<Spectrum> + Send + Sync> =
+                mp.get_spectrum_texture("amount", Spectrum::new(0.5));
+            if let Some(m1) = mat1 {
+                if let Some(m2) = mat2 {
+                    let mix = Arc::new(Material::Mix(Box::new(MixMaterial::new(
+                        m1.clone(),
+                        m2.clone(),
+                        scale,
+                    ))));
+                    return Some(mix);
+                }
+            }
+            return None;
+        } else if api_state.graphics_state.material == "metal" {
+            return Some(MetalMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "substrate" {
+            return Some(SubstrateMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "uber" {
+            return Some(UberMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "subsurface" {
+            return Some(SubsurfaceMaterial::create(&mut mp));
+        } else if api_state.graphics_state.material == "kdsubsurface" {
+            println!("TODO: CreateKdsubsurfaceMaterial");
+        } else if api_state.graphics_state.material == "fourier" {
+            return Some(FourierMaterial::create(&mut mp, bsdf_state));
+        } else if api_state.graphics_state.material == "disney" {
+            return Some(DisneyMaterial::create(&mut mp));
         } else {
             panic!(
                 "Material \"{}\" unknown.",
