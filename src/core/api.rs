@@ -43,14 +43,14 @@ use crate::filters::gaussian::GaussianFilter;
 use crate::filters::mitchell::MitchellNetravali;
 use crate::filters::sinc::LanczosSincFilter;
 use crate::filters::triangle::TriangleFilter;
-use crate::integrators::ao::AOIntegrator;
+// use crate::integrators::ao::AOIntegrator;
 // use crate::integrators::bdpt::BDPTIntegrator;
 use crate::integrators::directlighting::{DirectLightingIntegrator, LightStrategy};
 // use crate::integrators::mlt::MLTIntegrator;
-use crate::integrators::path::PathIntegrator;
+// use crate::integrators::path::PathIntegrator;
 // use crate::integrators::sppm::SPPMIntegrator;
-use crate::integrators::volpath::VolPathIntegrator;
-use crate::integrators::whitted::WhittedIntegrator;
+// use crate::integrators::volpath::VolPathIntegrator;
+// use crate::integrators::whitted::WhittedIntegrator;
 use crate::lights::diffuse::DiffuseAreaLight;
 use crate::lights::distant::DistantLight;
 use crate::lights::goniometric::GonioPhotometricLight;
@@ -59,18 +59,18 @@ use crate::lights::point::PointLight;
 use crate::lights::projection::ProjectionLight;
 use crate::lights::spot::SpotLight;
 // use crate::materials::disney::DisneyMaterial;
-use crate::materials::fourier::FourierMaterial;
-use crate::materials::glass::GlassMaterial;
-use crate::materials::hair::HairMaterial;
+// use crate::materials::fourier::FourierMaterial;
+// use crate::materials::glass::GlassMaterial;
+// use crate::materials::hair::HairMaterial;
 use crate::materials::matte::MatteMaterial;
-use crate::materials::metal::MetalMaterial;
-use crate::materials::mirror::MirrorMaterial;
+// use crate::materials::metal::MetalMaterial;
+// use crate::materials::mirror::MirrorMaterial;
 // use crate::materials::mixmat::MixMaterial;
-use crate::materials::plastic::PlasticMaterial;
-use crate::materials::substrate::SubstrateMaterial;
-use crate::materials::subsurface::SubsurfaceMaterial;
-use crate::materials::translucent::TranslucentMaterial;
-use crate::materials::uber::UberMaterial;
+// use crate::materials::plastic::PlasticMaterial;
+// use crate::materials::substrate::SubstrateMaterial;
+// use crate::materials::subsurface::SubsurfaceMaterial;
+// use crate::materials::translucent::TranslucentMaterial;
+// use crate::materials::uber::UberMaterial;
 use crate::media::grid::GridDensityMedium;
 use crate::media::homogeneous::HomogeneousMedium;
 use crate::samplers::halton::HaltonSampler;
@@ -213,15 +213,16 @@ impl RenderOptions {
             let some_sampler: Option<Box<Sampler>> =
                 make_sampler(&self.sampler_name, &self.sampler_params, camera.get_film());
             if let Some(sampler) = some_sampler {
-                if self.integrator_name == "whitted" {
-                    // CreateWhittedIntegrator
-                    let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
-                    let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
-                    let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::Whitted(
-                        WhittedIntegrator::new(max_depth as u32, camera, sampler, pixel_bounds),
-                    )));
-                    some_integrator = Some(integrator);
-                } else if self.integrator_name == "directlighting" {
+                // if self.integrator_name == "whitted" {
+                //     // CreateWhittedIntegrator
+                //     let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
+                //     let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
+                //     let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::Whitted(
+                //         WhittedIntegrator::new(max_depth as u32, camera, sampler, pixel_bounds),
+                //     )));
+                //     some_integrator = Some(integrator);
+                // } else 
+                    if self.integrator_name == "directlighting" {
                     // CreateDirectLightingIntegrator
                     let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
                     let st: String = self
@@ -252,80 +253,80 @@ impl RenderOptions {
                         )),
                     ));
                     some_integrator = Some(integrator);
-                } else if self.integrator_name == "path" {
-                    // CreatePathIntegrator
-                    let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
-                    let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
-                    let np: usize = pb.len();
-                    let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
-                    if np > 0 as usize {
-                        if np != 4 as usize {
-                            panic!(
-                                "Expected four values for \"pixelbounds\" parameter. Got {}.",
-                                np
-                            );
-                        } else {
-                            println!("TODO: pixelBounds = Intersect(...)");
-                            // pixelBounds = Intersect(pixelBounds,
-                            //                         Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
-                            // if (pixelBounds.Area() == 0)
-                            //     Error("Degenerate \"pixelbounds\" specified.");
-                        }
-                    }
-                    let rr_threshold: Float = self
-                        .integrator_params
-                        .find_one_float("rrthreshold", 1.0 as Float);
-                    let light_strategy: String = self
-                        .integrator_params
-                        .find_one_string("lightsamplestrategy", String::from("spatial"));
-                    let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::Path(
-                        PathIntegrator::new(
-                            max_depth as u32,
-                            camera,
-                            sampler,
-                            pixel_bounds,
-                            rr_threshold,
-                            light_strategy,
-                        ),
-                    )));
-                    some_integrator = Some(integrator);
-                } else if self.integrator_name == "volpath" {
-                    // CreateVolPathIntegrator
-                    let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
-                    let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
-                    let np: usize = pb.len();
-                    let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
-                    if np > 0 as usize {
-                        if np != 4 as usize {
-                            panic!(
-                                "Expected four values for \"pixelbounds\" parameter. Got {}.",
-                                np
-                            );
-                        } else {
-                            println!("TODO: pixelBounds = Intersect(...)");
-                            // pixelBounds = Intersect(pixelBounds,
-                            //                         Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
-                            // if (pixelBounds.Area() == 0)
-                            //     Error("Degenerate \"pixelbounds\" specified.");
-                        }
-                    }
-                    let rr_threshold: Float = self
-                        .integrator_params
-                        .find_one_float("rrthreshold", 1.0 as Float);
-                    let light_strategy: String = self
-                        .integrator_params
-                        .find_one_string("lightsamplestrategy", String::from("spatial"));
-                    let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::VolPath(
-                        VolPathIntegrator::new(
-                            max_depth as u32,
-                            camera,
-                            sampler,
-                            pixel_bounds,
-                            rr_threshold,
-                            light_strategy,
-                        ),
-                    )));
-                    some_integrator = Some(integrator);
+                // } else if self.integrator_name == "path" {
+                //     // CreatePathIntegrator
+                //     let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
+                //     let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
+                //     let np: usize = pb.len();
+                //     let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
+                //     if np > 0 as usize {
+                //         if np != 4 as usize {
+                //             panic!(
+                //                 "Expected four values for \"pixelbounds\" parameter. Got {}.",
+                //                 np
+                //             );
+                //         } else {
+                //             println!("TODO: pixelBounds = Intersect(...)");
+                //             // pixelBounds = Intersect(pixelBounds,
+                //             //                         Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
+                //             // if (pixelBounds.Area() == 0)
+                //             //     Error("Degenerate \"pixelbounds\" specified.");
+                //         }
+                //     }
+                //     let rr_threshold: Float = self
+                //         .integrator_params
+                //         .find_one_float("rrthreshold", 1.0 as Float);
+                //     let light_strategy: String = self
+                //         .integrator_params
+                //         .find_one_string("lightsamplestrategy", String::from("spatial"));
+                //     let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::Path(
+                //         PathIntegrator::new(
+                //             max_depth as u32,
+                //             camera,
+                //             sampler,
+                //             pixel_bounds,
+                //             rr_threshold,
+                //             light_strategy,
+                //         ),
+                //     )));
+                //     some_integrator = Some(integrator);
+                // } else if self.integrator_name == "volpath" {
+                //     // CreateVolPathIntegrator
+                //     let max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
+                //     let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
+                //     let np: usize = pb.len();
+                //     let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
+                //     if np > 0 as usize {
+                //         if np != 4 as usize {
+                //             panic!(
+                //                 "Expected four values for \"pixelbounds\" parameter. Got {}.",
+                //                 np
+                //             );
+                //         } else {
+                //             println!("TODO: pixelBounds = Intersect(...)");
+                //             // pixelBounds = Intersect(pixelBounds,
+                //             //                         Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
+                //             // if (pixelBounds.Area() == 0)
+                //             //     Error("Degenerate \"pixelbounds\" specified.");
+                //         }
+                //     }
+                //     let rr_threshold: Float = self
+                //         .integrator_params
+                //         .find_one_float("rrthreshold", 1.0 as Float);
+                //     let light_strategy: String = self
+                //         .integrator_params
+                //         .find_one_string("lightsamplestrategy", String::from("spatial"));
+                //     let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::VolPath(
+                //         VolPathIntegrator::new(
+                //             max_depth as u32,
+                //             camera,
+                //             sampler,
+                //             pixel_bounds,
+                //             rr_threshold,
+                //             light_strategy,
+                //         ),
+                //     )));
+                //     some_integrator = Some(integrator);
                 // } else if self.integrator_name == "bdpt" {
                 //     // CreateBDPTIntegrator
                 //     let mut max_depth: i32 = self.integrator_params.find_one_int("maxdepth", 5);
@@ -378,31 +379,31 @@ impl RenderOptions {
                 //         large_step_probability,
                 //     )));
                 //     some_integrator = Some(integrator);
-                } else if self.integrator_name == "ambientocclusion" {
-                    // CreateAOIntegrator
-                    let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
-                    let np: usize = pb.len();
-                    let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
-                    if np > 0 as usize {
-                        if np != 4 as usize {
-                            panic!(
-                                "Expected four values for \"pixelbounds\" parameter. Got {}.",
-                                np
-                            );
-                        } else {
-                            println!("TODO: pixelBounds = Intersect(...)");
-                            // pixelBounds = Intersect(pixelBounds,
-                            //                         Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
-                            // if (pixelBounds.Area() == 0)
-                            //     Error("Degenerate \"pixelbounds\" specified.");
-                        }
-                    }
-                    let cos_sample: bool = self.integrator_params.find_one_bool("cossample", true);
-                    let n_samples: i32 = self.integrator_params.find_one_int("nsamples", 64 as i32);
-                    let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::AO(
-                        AOIntegrator::new(cos_sample, n_samples, camera, sampler, pixel_bounds),
-                    )));
-                    some_integrator = Some(integrator);
+                // } else if self.integrator_name == "ambientocclusion" {
+                //     // CreateAOIntegrator
+                //     let pb: Vec<i32> = self.integrator_params.find_int("pixelbounds");
+                //     let np: usize = pb.len();
+                //     let pixel_bounds: Bounds2i = camera.get_film().get_sample_bounds();
+                //     if np > 0 as usize {
+                //         if np != 4 as usize {
+                //             panic!(
+                //                 "Expected four values for \"pixelbounds\" parameter. Got {}.",
+                //                 np
+                //             );
+                //         } else {
+                //             println!("TODO: pixelBounds = Intersect(...)");
+                //             // pixelBounds = Intersect(pixelBounds,
+                //             //                         Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
+                //             // if (pixelBounds.Area() == 0)
+                //             //     Error("Degenerate \"pixelbounds\" specified.");
+                //         }
+                //     }
+                //     let cos_sample: bool = self.integrator_params.find_one_bool("cossample", true);
+                //     let n_samples: i32 = self.integrator_params.find_one_int("nsamples", 64 as i32);
+                //     let integrator = Box::new(Integrator::Sampler(SamplerIntegrator::AO(
+                //         AOIntegrator::new(cos_sample, n_samples, camera, sampler, pixel_bounds),
+                //     )));
+                //     some_integrator = Some(integrator);
                 // } else if self.integrator_name == "sppm" {
                 //     // CreateSPPMIntegrator
                 //     let mut n_iterations: i32 =
@@ -625,16 +626,16 @@ fn create_material(api_state: &ApiState, bsdf_state: &mut BsdfState) -> Option<A
             return None;
         } else if api_state.graphics_state.material == "matte" {
             return Some(MatteMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "plastic" {
-            return Some(PlasticMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "translucent" {
-            return Some(TranslucentMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "glass" {
-            return Some(GlassMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "mirror" {
-            return Some(MirrorMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "hair" {
-            return Some(HairMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "plastic" {
+        //     return Some(PlasticMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "translucent" {
+        //     return Some(TranslucentMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "glass" {
+        //     return Some(GlassMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "mirror" {
+        //     return Some(MirrorMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "hair" {
+        //     return Some(HairMaterial::create(&mut mp));
         // } else if api_state.graphics_state.material == "mix" {
         //     let m1: String = mp.find_string("namedmaterial1", String::from(""));
         //     let m2: String = mp.find_string("namedmaterial2", String::from(""));
@@ -663,18 +664,18 @@ fn create_material(api_state: &ApiState, bsdf_state: &mut BsdfState) -> Option<A
         //         }
         //     }
         //     return None;
-        } else if api_state.graphics_state.material == "metal" {
-            return Some(MetalMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "substrate" {
-            return Some(SubstrateMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "uber" {
-            return Some(UberMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "subsurface" {
-            return Some(SubsurfaceMaterial::create(&mut mp));
-        } else if api_state.graphics_state.material == "kdsubsurface" {
-            println!("TODO: CreateKdsubsurfaceMaterial");
-        } else if api_state.graphics_state.material == "fourier" {
-            return Some(FourierMaterial::create(&mut mp, bsdf_state));
+        // } else if api_state.graphics_state.material == "metal" {
+        //     return Some(MetalMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "substrate" {
+        //     return Some(SubstrateMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "uber" {
+        //     return Some(UberMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "subsurface" {
+        //     return Some(SubsurfaceMaterial::create(&mut mp));
+        // } else if api_state.graphics_state.material == "kdsubsurface" {
+        //     println!("TODO: CreateKdsubsurfaceMaterial");
+        // } else if api_state.graphics_state.material == "fourier" {
+        //     return Some(FourierMaterial::create(&mut mp, bsdf_state));
         // } else if api_state.graphics_state.material == "disney" {
         //     return Some(DisneyMaterial::create(&mut mp));
         } else {

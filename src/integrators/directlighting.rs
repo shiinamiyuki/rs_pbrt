@@ -8,7 +8,7 @@ use crate::core::integrator::{uniform_sample_all_lights, uniform_sample_one_ligh
 use crate::core::interaction::{Interaction, SurfaceInteraction};
 use crate::core::material::TransportMode;
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::reflection::{Bsdf, BxdfType};
+use crate::core::reflection::{Bsdf, Bxdf, BxdfType};
 use crate::core::sampler::Sampler;
 use crate::core::scene::Scene;
 
@@ -71,7 +71,8 @@ impl DirectLightingIntegrator {
         ray: &mut Ray,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         depth: i32,
     ) -> Spectrum {
         // TODO: ProfilePhase p(Prof::SamplerIntegratorLi);
@@ -81,9 +82,16 @@ impl DirectLightingIntegrator {
         if scene.intersect(ray, &mut isect) {
             // compute scattering functions for surface interaction
             let mode: TransportMode = TransportMode::Radiance;
-            isect.compute_scattering_functions(ray, arena, false, mode);
+            isect.compute_scattering_functions(ray, arena_bsdf, arena_bxdf, false, mode);
             if isect.bsdf.is_none() {
-                return self.li(&mut isect.spawn_ray(&ray.d), scene, sampler, arena, depth);
+                return self.li(
+                    &mut isect.spawn_ray(&ray.d),
+                    scene,
+                    sampler,
+                    arena_bsdf,
+                    arena_bxdf,
+                    depth,
+                );
             }
             let wo: Vector3f = isect.common.wo;
             l += isect.le(&wo);
@@ -93,19 +101,24 @@ impl DirectLightingIntegrator {
                     l += uniform_sample_all_lights(
                         &isect,
                         scene,
-                        arena,
+                        arena_bsdf,
+                        arena_bxdf,
                         sampler,
                         &self.n_light_samples,
                         false,
                     );
                 } else {
-                    l += uniform_sample_one_light(&isect, scene, arena, sampler, false, None);
+                    l += uniform_sample_one_light(
+                        &isect, scene, arena_bsdf, arena_bxdf, sampler, false, None,
+                    );
                 }
             }
             if ((depth + 1_i32) as u32) < self.max_depth {
                 // trace rays for specular reflection and refraction
-                l += self.specular_reflect(ray, &isect, scene, sampler, arena, depth);
-                l += self.specular_transmit(ray, &isect, scene, sampler, arena, depth);
+                l += self
+                    .specular_reflect(ray, &isect, scene, sampler, arena_bsdf, arena_bxdf, depth);
+                l += self
+                    .specular_transmit(ray, &isect, scene, sampler, arena_bsdf, arena_bxdf, depth);
             }
         } else {
             for light in &scene.lights {
@@ -129,7 +142,8 @@ impl DirectLightingIntegrator {
         isect: &SurfaceInteraction,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         depth: i32,
     ) -> Spectrum {
         // compute specular reflection direction _wi_ and BSDF value
@@ -140,7 +154,7 @@ impl DirectLightingIntegrator {
         let mut sampled_type: u8 = 0_u8;
         let bsdf_flags: u8 = BxdfType::BsdfReflection as u8 | BxdfType::BsdfSpecular as u8;
         let f: Spectrum;
-        if let Some(ref bsdf) = isect.get_bsdf(&arena) {
+        if let Some(ref bsdf) = isect.get_bsdf(&arena_bsdf) {
             f = bsdf.sample_f(
                 &wo,
                 &mut wi,
@@ -148,6 +162,7 @@ impl DirectLightingIntegrator {
                 &mut pdf,
                 bsdf_flags,
                 &mut sampled_type,
+                arena_bxdf,
             );
             if pdf > 0.0 as Float && !f.is_black() && vec3_abs_dot_nrmf(&wi, &ns) != 0.0 as Float {
                 // compute ray differential _rd_ for specular reflection
@@ -174,7 +189,7 @@ impl DirectLightingIntegrator {
                     };
                     rd.differential = Some(diff);
                 }
-                f * self.li(&mut rd, scene, sampler, arena, depth + 1)
+                f * self.li(&mut rd, scene, sampler, arena_bsdf, arena_bxdf, depth + 1)
                     * Spectrum::new(vec3_abs_dot_nrmf(&wi, &ns) / pdf)
             } else {
                 Spectrum::new(0.0)
@@ -189,7 +204,8 @@ impl DirectLightingIntegrator {
         isect: &SurfaceInteraction,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         depth: i32,
     ) -> Spectrum {
         let wo: Vector3f = isect.common.wo;
@@ -200,7 +216,7 @@ impl DirectLightingIntegrator {
         let mut sampled_type: u8 = 0_u8;
         let bsdf_flags: u8 = BxdfType::BsdfTransmission as u8 | BxdfType::BsdfSpecular as u8;
         let f: Spectrum;
-        if let Some(ref bsdf) = isect.get_bsdf(arena) {
+        if let Some(ref bsdf) = isect.get_bsdf(arena_bsdf) {
             f = bsdf.sample_f(
                 &wo,
                 &mut wi,
@@ -208,6 +224,7 @@ impl DirectLightingIntegrator {
                 &mut pdf,
                 bsdf_flags,
                 &mut sampled_type,
+                arena_bxdf,
             );
             if pdf > 0.0 as Float && !f.is_black() && vec3_abs_dot_nrmf(&wi, &ns) != 0.0 as Float {
                 // compute ray differential _rd_ for specular transmission
@@ -241,7 +258,7 @@ impl DirectLightingIntegrator {
                     };
                     rd.differential = Some(diff);
                 }
-                f * self.li(&mut rd, scene, sampler, arena, depth + 1)
+                f * self.li(&mut rd, scene, sampler, arena_bsdf, arena_bxdf, depth + 1)
                     * Spectrum::new(vec3_abs_dot_nrmf(&wi, &ns) / pdf)
             } else {
                 Spectrum::new(0.0)

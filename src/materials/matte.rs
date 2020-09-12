@@ -43,7 +43,8 @@ impl MatteMaterial {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         _mode: TransportMode,
         _allow_multiple_lobes: bool,
         _material: Option<Arc<Material>>,
@@ -71,21 +72,27 @@ impl MatteMaterial {
         if !r.is_black() {
             if sig == 0.0 {
                 if use_scale {
-                    bsdf.add(Bxdf::LambertianRefl(LambertianReflection::new(r, Some(sc))));
+                    arena_bxdf.push(Bxdf::LambertianRefl(LambertianReflection::new(r, Some(sc))));
+                    bsdf.add(arena_bxdf.len() - 1);
                 } else {
-                    bsdf.add(Bxdf::LambertianRefl(LambertianReflection::new(r, None)));
+                    arena_bxdf.push(Bxdf::LambertianRefl(LambertianReflection::new(r, None)));
+                    bsdf.add(arena_bxdf.len() - 1);
                 }
             } else if use_scale {
-                bsdf.add(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, Some(sc))));
+                arena_bxdf.push(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, Some(sc))));
+                bsdf.add(arena_bxdf.len() - 1);
             } else {
-                bsdf.add(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, None)));
+                arena_bxdf.push(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, None)));
+                bsdf.add(arena_bxdf.len() - 1);
             }
         } else if use_scale {
-            bsdf.add(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, Some(sc))));
+            arena_bxdf.push(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, Some(sc))));
+            bsdf.add(arena_bxdf.len() - 1);
         } else {
-            bsdf.add(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, None)));
+            arena_bxdf.push(Bxdf::OrenNayarRefl(OrenNayar::new(r, sig, None)));
+            bsdf.add(arena_bxdf.len() - 1);
         }
-        arena.push(bsdf);
-        si.bsdf = Some(arena.len() - 1);
+        arena_bsdf.push(bsdf);
+        si.bsdf = Some(arena_bsdf.len() - 1);
     }
 }

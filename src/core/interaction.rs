@@ -21,7 +21,7 @@ use crate::core::medium::{HenyeyGreenstein, Medium, MediumInterface};
 use crate::core::pbrt::SHADOW_EPSILON;
 use crate::core::pbrt::{Float, Spectrum};
 use crate::core::primitive::Primitive;
-use crate::core::reflection::Bsdf;
+use crate::core::reflection::{Bsdf, Bxdf};
 use crate::core::shape::Shape;
 use crate::core::transform::solve_linear_system_2x2;
 
@@ -38,7 +38,7 @@ pub trait Interaction {
     fn get_wo(&self) -> &Vector3f;
     fn get_n(&self) -> &Normal3f;
     fn get_medium_interface(&self) -> Option<Arc<MediumInterface>>;
-    fn get_bsdf<'b>(&self, arena: &'b Vec<Bsdf>) -> Option<&'b Bsdf>;
+    fn get_bsdf<'b>(&self, arena_bsdf: &'b Vec<Bsdf>) -> Option<&'b Bsdf>;
     fn get_shading_n(&self) -> Option<&Normal3f>;
     fn get_phase(&self) -> Option<Arc<HenyeyGreenstein>>;
 }
@@ -229,7 +229,7 @@ impl Interaction for MediumInteraction {
             None
         }
     }
-    fn get_bsdf<'b>(&self, _arena: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
+    fn get_bsdf<'b>(&self, _arena_bsdf: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
         None
     }
     fn get_shading_n(&self) -> Option<&Normal3f> {
@@ -400,14 +400,21 @@ impl<'a> SurfaceInteraction<'a> {
     pub fn compute_scattering_functions(
         &mut self,
         ray: &Ray,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         allow_multiple_lobes: bool,
         mode: TransportMode,
     ) {
         self.compute_differentials(ray);
         if let Some(primitive_raw) = self.primitive {
             let primitive = unsafe { &*primitive_raw };
-            primitive.compute_scattering_functions(self, arena, mode, allow_multiple_lobes);
+            primitive.compute_scattering_functions(
+                self,
+                arena_bsdf,
+                arena_bxdf,
+                mode,
+                allow_multiple_lobes,
+            );
         }
     }
     pub fn compute_differentials(&mut self, ray: &Ray) {
@@ -567,9 +574,9 @@ impl<'a> Interaction for SurfaceInteraction<'a> {
             None
         }
     }
-    fn get_bsdf<'b>(&self, arena: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
+    fn get_bsdf<'b>(&self, arena_bsdf: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
         if let Some(bsdf_idx) = self.bsdf {
-            Some(&arena[bsdf_idx])
+            Some(&arena_bsdf[bsdf_idx])
         } else {
             None
         }

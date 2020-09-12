@@ -9,21 +9,21 @@ use crate::core::geometry::vec3_cross_vec3;
 use crate::core::geometry::{Normal3f, Vector2f, Vector3f};
 use crate::core::interaction::SurfaceInteraction;
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::reflection::Bsdf;
+use crate::core::reflection::{Bsdf, Bxdf};
 use crate::core::texture::Texture;
 // use crate::materials::disney::DisneyMaterial;
-use crate::materials::fourier::FourierMaterial;
-use crate::materials::glass::GlassMaterial;
-use crate::materials::hair::HairMaterial;
+// use crate::materials::fourier::FourierMaterial;
+// use crate::materials::glass::GlassMaterial;
+// use crate::materials::hair::HairMaterial;
 use crate::materials::matte::MatteMaterial;
-use crate::materials::metal::MetalMaterial;
-use crate::materials::mirror::MirrorMaterial;
+// use crate::materials::metal::MetalMaterial;
+// use crate::materials::mirror::MirrorMaterial;
 // use crate::materials::mixmat::MixMaterial;
-use crate::materials::plastic::PlasticMaterial;
-use crate::materials::substrate::SubstrateMaterial;
-use crate::materials::subsurface::SubsurfaceMaterial;
-use crate::materials::translucent::TranslucentMaterial;
-use crate::materials::uber::UberMaterial;
+// use crate::materials::plastic::PlasticMaterial;
+// use crate::materials::substrate::SubstrateMaterial;
+// use crate::materials::subsurface::SubsurfaceMaterial;
+// use crate::materials::translucent::TranslucentMaterial;
+// use crate::materials::uber::UberMaterial;
 
 // see material.h
 
@@ -38,18 +38,18 @@ pub enum TransportMode {
 
 pub enum Material {
     // Disney(Box<DisneyMaterial>),
-    Fourier(Box<FourierMaterial>),
-    Glass(Box<GlassMaterial>),
-    Hair(Box<HairMaterial>),
+    // Fourier(Box<FourierMaterial>),
+    // Glass(Box<GlassMaterial>),
+    // Hair(Box<HairMaterial>),
     Matte(Box<MatteMaterial>),
-    Metal(Box<MetalMaterial>),
-    Mirror(Box<MirrorMaterial>),
+    // Metal(Box<MetalMaterial>),
+    // Mirror(Box<MirrorMaterial>),
     // Mix(Box<MixMaterial>),
-    Plastic(Box<PlasticMaterial>),
-    Substrate(Box<SubstrateMaterial>),
-    Subsurface(Box<SubsurfaceMaterial>),
-    Translucent(Box<TranslucentMaterial>),
-    Uber(Box<UberMaterial>),
+    // Plastic(Box<PlasticMaterial>),
+    // Substrate(Box<SubstrateMaterial>),
+    // Subsurface(Box<SubsurfaceMaterial>),
+    // Translucent(Box<TranslucentMaterial>),
+    // Uber(Box<UberMaterial>),
 }
 
 /// **Material** defines the interface that material implementations
@@ -63,7 +63,8 @@ impl Material {
     pub fn compute_scattering_functions(
         &self,
         si: &mut SurfaceInteraction,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         mode: TransportMode,
         allow_multiple_lobes: bool,
         mat: Option<Arc<Material>>,
@@ -78,54 +79,55 @@ impl Material {
             //     mat,
             //     scale,
             // ),
-            Material::Fourier(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
-            Material::Glass(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
-            Material::Hair(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
+            // Material::Fourier(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            // Material::Glass(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            // Material::Hair(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
             Material::Matte(material) => material.compute_scattering_functions(
                 si,
-                arena,
+                arena_bsdf,
+                arena_bxdf,
                 mode,
                 allow_multiple_lobes,
                 mat,
                 scale,
             ),
-            Material::Metal(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
-            Material::Mirror(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
+            // Material::Metal(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            // Material::Mirror(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
             // Material::Mix(material) => material.compute_scattering_functions(
             //     si,
             //     arena,
@@ -134,46 +136,46 @@ impl Material {
             //     mat,
             //     scale,
             // ),
-            Material::Plastic(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
-            Material::Substrate(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
-            Material::Subsurface(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
-            Material::Translucent(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
-            Material::Uber(material) => material.compute_scattering_functions(
-                si,
-                arena,
-                mode,
-                allow_multiple_lobes,
-                mat,
-                scale,
-            ),
+            // Material::Plastic(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            // Material::Substrate(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            // Material::Subsurface(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            // Material::Translucent(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
+            // Material::Uber(material) => material.compute_scattering_functions(
+            //     si,
+            //     arena,
+            //     mode,
+            //     allow_multiple_lobes,
+            //     mat,
+            //     scale,
+            // ),
         }
     }
     /// Computing the effect of bump mapping at the point being shaded

@@ -12,19 +12,19 @@ use crate::core::interaction::{Interaction, InteractionCommon, SurfaceInteractio
 use crate::core::light::is_delta_light;
 use crate::core::light::{Light, VisibilityTester};
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::reflection::{Bsdf, BxdfType};
+use crate::core::reflection::{Bsdf, Bxdf, BxdfType};
 use crate::core::sampler::Sampler;
 use crate::core::sampling::power_heuristic;
 use crate::core::sampling::Distribution1D;
 use crate::core::scene::Scene;
-use crate::integrators::ao::AOIntegrator;
+// use crate::integrators::ao::AOIntegrator;
 // use crate::integrators::bdpt::BDPTIntegrator;
 use crate::integrators::directlighting::DirectLightingIntegrator;
 // use crate::integrators::mlt::MLTIntegrator;
-use crate::integrators::path::PathIntegrator;
+// use crate::integrators::path::PathIntegrator;
 // use crate::integrators::sppm::SPPMIntegrator;
-use crate::integrators::volpath::VolPathIntegrator;
-use crate::integrators::whitted::WhittedIntegrator;
+// use crate::integrators::volpath::VolPathIntegrator;
+// use crate::integrators::whitted::WhittedIntegrator;
 // see integrator.h
 
 pub enum Integrator {
@@ -46,21 +46,21 @@ impl Integrator {
 }
 
 pub enum SamplerIntegrator {
-    AO(AOIntegrator),
+    // AO(AOIntegrator),
     DirectLighting(DirectLightingIntegrator),
-    Path(PathIntegrator),
-    VolPath(VolPathIntegrator),
-    Whitted(WhittedIntegrator),
+    // Path(PathIntegrator),
+    // VolPath(VolPathIntegrator),
+    // Whitted(WhittedIntegrator),
 }
 
 impl SamplerIntegrator {
     pub fn preprocess(&mut self, scene: &Scene) {
         match self {
-            SamplerIntegrator::AO(integrator) => integrator.preprocess(scene),
+            // SamplerIntegrator::AO(integrator) => integrator.preprocess(scene),
             SamplerIntegrator::DirectLighting(integrator) => integrator.preprocess(scene),
-            SamplerIntegrator::Path(integrator) => integrator.preprocess(scene),
-            SamplerIntegrator::VolPath(integrator) => integrator.preprocess(scene),
-            SamplerIntegrator::Whitted(integrator) => integrator.preprocess(scene),
+            // SamplerIntegrator::Path(integrator) => integrator.preprocess(scene),
+            // SamplerIntegrator::VolPath(integrator) => integrator.preprocess(scene),
+            // SamplerIntegrator::Whitted(integrator) => integrator.preprocess(scene),
         }
     }
     pub fn render(&mut self, scene: &Scene, num_threads: u8) {
@@ -101,7 +101,8 @@ impl SamplerIntegrator {
                     let pixel_tx = pixel_tx.clone();
                     let mut tile_sampler: Box<Sampler> = sampler.clone_with_seed(0_u64);
                     scope.spawn(move |_| {
-                        let mut arena: Vec<Bsdf> = Vec::with_capacity(128);
+                        let mut arena_bsdf: Vec<Bsdf> = Vec::with_capacity(128);
+                        let mut arena_bxdf: Vec<Bxdf> = Vec::with_capacity(128);
                         while let Some((x, y)) = bq.next() {
                             let tile: Point2i = Point2i {
                                 x: x as i32,
@@ -155,7 +156,8 @@ impl SamplerIntegrator {
                                             &mut ray,
                                             scene,
                                             &mut tile_sampler,
-                                            &mut arena,
+                                            &mut arena_bsdf,
+                                            &mut arena_bxdf,
                                             0_i32,
                                         );
                                     }
@@ -192,7 +194,8 @@ impl SamplerIntegrator {
                                     //          camera_sample, ray, l);
                                     // add camera ray's contribution to image
                                     film_tile.add_sample(camera_sample.p_film, &mut l, ray_weight);
-                                    arena.clear();
+                                    arena_bsdf.clear();
+                                    arena_bxdf.clear();
                                     done = !tile_sampler.start_next_sample();
                                 } // arena is dropped here !
                             }
@@ -221,48 +224,48 @@ impl SamplerIntegrator {
         ray: &mut Ray,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         depth: i32,
     ) -> Spectrum {
         match self {
-            SamplerIntegrator::AO(integrator) => integrator.li(ray, scene, sampler, arena, depth),
+            // SamplerIntegrator::AO(integrator) => integrator.li(ray, scene, sampler, arena, depth),
             SamplerIntegrator::DirectLighting(integrator) => {
-                integrator.li(ray, scene, sampler, arena, depth)
-            }
-            SamplerIntegrator::Path(integrator) => integrator.li(ray, scene, sampler, arena, depth),
-            SamplerIntegrator::VolPath(integrator) => {
-                integrator.li(ray, scene, sampler, arena, depth)
-            }
-            SamplerIntegrator::Whitted(integrator) => {
-                integrator.li(ray, scene, sampler, arena, depth)
-            }
+                integrator.li(ray, scene, sampler, arena_bsdf, arena_bxdf, depth)
+            } // SamplerIntegrator::Path(integrator) => integrator.li(ray, scene, sampler, arena, depth),
+              // SamplerIntegrator::VolPath(integrator) => {
+              //     integrator.li(ray, scene, sampler, arena, depth)
+              // }
+              // SamplerIntegrator::Whitted(integrator) => {
+              //     integrator.li(ray, scene, sampler, arena, depth)
+              // }
         }
     }
     pub fn get_camera(&self) -> Arc<Camera> {
         match self {
-            SamplerIntegrator::AO(integrator) => integrator.get_camera(),
+            // SamplerIntegrator::AO(integrator) => integrator.get_camera(),
             SamplerIntegrator::DirectLighting(integrator) => integrator.get_camera(),
-            SamplerIntegrator::Path(integrator) => integrator.get_camera(),
-            SamplerIntegrator::VolPath(integrator) => integrator.get_camera(),
-            SamplerIntegrator::Whitted(integrator) => integrator.get_camera(),
+            // SamplerIntegrator::Path(integrator) => integrator.get_camera(),
+            // SamplerIntegrator::VolPath(integrator) => integrator.get_camera(),
+            // SamplerIntegrator::Whitted(integrator) => integrator.get_camera(),
         }
     }
     pub fn get_sampler(&self) -> &Sampler {
         match self {
-            SamplerIntegrator::AO(integrator) => integrator.get_sampler(),
+            // SamplerIntegrator::AO(integrator) => integrator.get_sampler(),
             SamplerIntegrator::DirectLighting(integrator) => integrator.get_sampler(),
-            SamplerIntegrator::Path(integrator) => integrator.get_sampler(),
-            SamplerIntegrator::VolPath(integrator) => integrator.get_sampler(),
-            SamplerIntegrator::Whitted(integrator) => integrator.get_sampler(),
+            // SamplerIntegrator::Path(integrator) => integrator.get_sampler(),
+            // SamplerIntegrator::VolPath(integrator) => integrator.get_sampler(),
+            // SamplerIntegrator::Whitted(integrator) => integrator.get_sampler(),
         }
     }
     pub fn get_pixel_bounds(&self) -> Bounds2i {
         match self {
-            SamplerIntegrator::AO(integrator) => integrator.get_pixel_bounds(),
+            // SamplerIntegrator::AO(integrator) => integrator.get_pixel_bounds(),
             SamplerIntegrator::DirectLighting(integrator) => integrator.get_pixel_bounds(),
-            SamplerIntegrator::Path(integrator) => integrator.get_pixel_bounds(),
-            SamplerIntegrator::VolPath(integrator) => integrator.get_pixel_bounds(),
-            SamplerIntegrator::Whitted(integrator) => integrator.get_pixel_bounds(),
+            // SamplerIntegrator::Path(integrator) => integrator.get_pixel_bounds(),
+            // SamplerIntegrator::VolPath(integrator) => integrator.get_pixel_bounds(),
+            // SamplerIntegrator::Whitted(integrator) => integrator.get_pixel_bounds(),
         }
     }
     pub fn specular_reflect(
@@ -271,16 +274,16 @@ impl SamplerIntegrator {
         isect: &SurfaceInteraction,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         depth: i32,
     ) -> Spectrum {
         match self {
-            SamplerIntegrator::DirectLighting(integrator) => {
-                integrator.specular_reflect(ray, isect, scene, sampler, arena, depth)
-            }
-            SamplerIntegrator::Whitted(integrator) => {
-                integrator.specular_reflect(ray, isect, scene, sampler, arena, depth)
-            }
+            SamplerIntegrator::DirectLighting(integrator) => integrator
+                .specular_reflect(ray, isect, scene, sampler, arena_bsdf, arena_bxdf, depth),
+            // SamplerIntegrator::Whitted(integrator) => {
+            //     integrator.specular_reflect(ray, isect, scene, sampler, arena, depth)
+            // }
             _ => Spectrum::default(),
         }
     }
@@ -290,16 +293,16 @@ impl SamplerIntegrator {
         isect: &SurfaceInteraction,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         depth: i32,
     ) -> Spectrum {
         match self {
-            SamplerIntegrator::DirectLighting(integrator) => {
-                integrator.specular_transmit(ray, isect, scene, sampler, arena, depth)
-            }
-            SamplerIntegrator::Whitted(integrator) => {
-                integrator.specular_transmit(ray, isect, scene, sampler, arena, depth)
-            }
+            SamplerIntegrator::DirectLighting(integrator) => integrator
+                .specular_transmit(ray, isect, scene, sampler, arena_bsdf, arena_bxdf, depth),
+            // SamplerIntegrator::Whitted(integrator) => {
+            //     integrator.specular_transmit(ray, isect, scene, sampler, arena, depth)
+            // }
             _ => Spectrum::default(),
         }
     }
@@ -311,7 +314,8 @@ impl SamplerIntegrator {
 pub fn uniform_sample_all_lights(
     it: &SurfaceInteraction,
     scene: &Scene,
-    arena: &Vec<Bsdf>,
+    arena_bsdf: &Vec<Bsdf>,
+    arena_bxdf: &Vec<Bxdf>,
     sampler: &mut Sampler,
     n_light_samples: &[i32],
     handle_media: bool,
@@ -336,7 +340,8 @@ pub fn uniform_sample_all_lights(
                 u_light,
                 scene,
                 sampler,
-                arena,
+                arena_bsdf,
+                arena_bxdf,
                 handle_media,
                 false,
             );
@@ -357,7 +362,8 @@ pub fn uniform_sample_all_lights(
                     u_light_array_sample,
                     scene,
                     sampler,
-                    arena,
+                    arena_bsdf,
+                    arena_bxdf,
                     handle_media,
                     false,
                 );
@@ -373,7 +379,8 @@ pub fn uniform_sample_all_lights(
 pub fn uniform_sample_one_light(
     it: &dyn Interaction,
     scene: &Scene,
-    arena: &Vec<Bsdf>,
+    arena_bsdf: &Vec<Bsdf>,
+    arena_bxdf: &Vec<Bxdf>,
     sampler: &mut Sampler,
     handle_media: bool,
     light_distrib: Option<&Distribution1D>,
@@ -412,7 +419,8 @@ pub fn uniform_sample_one_light(
         u_light,
         scene,
         sampler,
-        arena,
+        arena_bsdf,
+        arena_bxdf,
         handle_media,
         false,
     ) / pdf
@@ -426,7 +434,8 @@ pub fn estimate_direct(
     u_light: Point2f,
     scene: &Scene,
     sampler: &mut Sampler,
-    arena: &Vec<Bsdf>,
+    arena_bsdf: &Vec<Bsdf>,
+    arena_bxdf: &Vec<Bxdf>,
     handle_media: bool,
     specular: bool,
 ) -> Spectrum {
@@ -458,11 +467,11 @@ pub fn estimate_direct(
         let mut f: Spectrum = Spectrum::new(0.0);
         if it.is_surface_interaction() {
             // evaluate BSDF for light sampling strategy
-            if let Some(ref bsdf) = it.get_bsdf(&arena) {
+            if let Some(ref bsdf) = it.get_bsdf(&arena_bsdf) {
                 if let Some(shading_n) = it.get_shading_n() {
-                    f = bsdf.f(&it.get_wo(), &wi, bsdf_flags)
+                    f = bsdf.f(&it.get_wo(), &wi, bsdf_flags, arena_bxdf)
                         * Spectrum::new(vec3_abs_dot_nrmf(&wi, &shading_n));
-                    scattering_pdf = bsdf.pdf(&it.get_wo(), &wi, bsdf_flags);
+                    scattering_pdf = bsdf.pdf(&it.get_wo(), &wi, bsdf_flags, arena_bxdf);
                     // TODO: println!("  surf f*dot :{:?}, scatteringPdf: {:?}", f, scattering_pdf);
                 }
             }
@@ -499,7 +508,7 @@ pub fn estimate_direct(
         if it.is_surface_interaction() {
             // sample scattered direction for surface interactions
             let mut sampled_type: u8 = 0_u8;
-            if let Some(ref bsdf) = it.get_bsdf(&arena) {
+            if let Some(ref bsdf) = it.get_bsdf(&arena_bsdf) {
                 if let Some(shading_n) = it.get_shading_n() {
                     f = bsdf.sample_f(
                         &it.get_wo(),
@@ -508,6 +517,7 @@ pub fn estimate_direct(
                         &mut scattering_pdf,
                         bsdf_flags,
                         &mut sampled_type,
+                        arena_bxdf,
                     );
                     f *= Spectrum::new(vec3_abs_dot_nrmf(&wi, &shading_n));
                     sampled_specular = (sampled_type & BxdfType::BsdfSpecular as u8) != 0_u8;

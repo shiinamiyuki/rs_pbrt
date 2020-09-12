@@ -35,7 +35,7 @@ use crate::core::sampling::cosine_sample_hemisphere;
 // use crate::materials::disney::{
 //     DisneyClearCoat, DisneyDiffuse, DisneyFakeSS, DisneyRetro, DisneySheen,
 // };
-use crate::materials::hair::HairBSDF;
+// use crate::materials::hair::HairBSDF;
 
 const MAX_BXDFS: u8 = 8_u8;
 
@@ -228,7 +228,7 @@ pub struct Bsdf {
     pub ng: Normal3f,
     pub ss: Vector3f,
     pub ts: Vector3f,
-    pub bxdfs: Vec<Bxdf>,
+    pub bxdfs: Vec<usize>,
 }
 
 impl Bsdf {
@@ -243,15 +243,15 @@ impl Bsdf {
             bxdfs: Vec::with_capacity(8),
         }
     }
-    pub fn add(&mut self, b: Bxdf) {
+    pub fn add(&mut self, bxdf_idx: usize) {
         assert!(self.bxdfs.len() < MAX_BXDFS as usize);
-        self.bxdfs.push(b);
+        self.bxdfs.push(bxdf_idx);
     }
-    pub fn num_components(&self, flags: u8) -> u8 {
+    pub fn num_components(&self, flags: u8, arena_bxdf: &Vec<Bxdf>) -> u8 {
         let mut num: u8 = 0;
         let n_bxdfs: usize = self.bxdfs.len();
         for i in 0..n_bxdfs {
-            if self.bxdfs[i].matches_flags(flags) {
+            if arena_bxdf[self.bxdfs[i]].matches_flags(flags) {
                 num += 1;
             }
         }
@@ -271,7 +271,13 @@ impl Bsdf {
             z: self.ss.z * v.x + self.ts.z * v.y + self.ns.z * v.z,
         }
     }
-    pub fn f(&self, wo_w: &Vector3f, wi_w: &Vector3f, flags: u8) -> Spectrum {
+    pub fn f(
+        &self,
+        wo_w: &Vector3f,
+        wi_w: &Vector3f,
+        flags: u8,
+        arena_bxdf: &Vec<Bxdf>,
+    ) -> Spectrum {
         // TODO: ProfilePhase pp(Prof::BSDFEvaluation);
         let wi: Vector3f = self.world_to_local(wi_w);
         let wo: Vector3f = self.world_to_local(wo_w);
@@ -284,12 +290,16 @@ impl Bsdf {
         let mut f: Spectrum = Spectrum::new(0.0 as Float);
         let n_bxdfs: usize = self.bxdfs.len();
         for i in 0..n_bxdfs {
-            if self.bxdfs[i].matches_flags(flags)
-                && ((reflect && (self.bxdfs[i].get_type() & BxdfType::BsdfReflection as u8 > 0_u8))
+            if arena_bxdf[self.bxdfs[i]].matches_flags(flags)
+                && ((reflect
+                    && (arena_bxdf[self.bxdfs[i]].get_type() & BxdfType::BsdfReflection as u8
+                        > 0_u8))
                     || (!reflect
-                        && (self.bxdfs[i].get_type() & BxdfType::BsdfTransmission as u8 > 0_u8)))
+                        && (arena_bxdf[self.bxdfs[i]].get_type()
+                            & BxdfType::BsdfTransmission as u8
+                            > 0_u8)))
             {
-                f += self.bxdfs[i].f(&wo, &wi);
+                f += arena_bxdf[self.bxdfs[i]].f(&wo, &wi);
             }
         }
         f
@@ -303,10 +313,11 @@ impl Bsdf {
         pdf: &mut Float,
         bsdf_flags: u8,
         sampled_type: &mut u8,
+        arena_bxdf: &Vec<Bxdf>,
     ) -> Spectrum {
         // TODO: ProfilePhase pp(Prof::BSDFSampling);
         // choose which _BxDF_ to sample
-        let matching_comps: u8 = self.num_components(bsdf_flags);
+        let matching_comps: u8 = self.num_components(bsdf_flags, arena_bxdf);
         if matching_comps == 0 {
             *pdf = 0.0 as Float;
             *sampled_type = 0_u8;
@@ -322,10 +333,10 @@ impl Bsdf {
         let n_bxdfs: usize = self.bxdfs.len();
         let mut bxdf_index: usize = 0_usize;
         for i in 0..n_bxdfs {
-            let matches: bool = self.bxdfs[i].matches_flags(bsdf_flags);
+            let matches: bool = arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags);
             if matches && count == 0 {
                 count -= 1_i8;
-                bxdf = self.bxdfs.get(i);
+                bxdf = Some(&arena_bxdf[self.bxdfs[i]]);
                 bxdf_index = i;
                 break;
             } else {
@@ -382,8 +393,8 @@ impl Bsdf {
             if (bxdf.get_type() & BxdfType::BsdfSpecular as u8 == 0_u8) && matching_comps > 1_u8 {
                 for i in 0..n_bxdfs {
                     // instead of self.bxdfs[i] != bxdf we compare stored index
-                    if bxdf_index != i && self.bxdfs[i].matches_flags(bsdf_flags) {
-                        *pdf += self.bxdfs[i].pdf(&wo, &wi);
+                    if bxdf_index != i && arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags) {
+                        *pdf += arena_bxdf[self.bxdfs[i]].pdf(&wo, &wi);
                     }
                 }
             }
@@ -397,15 +408,17 @@ impl Bsdf {
                     > 0.0 as Float;
                 f = Spectrum::default();
                 for i in 0..n_bxdfs {
-                    if self.bxdfs[i].matches_flags(bsdf_flags)
+                    if arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags)
                         && ((reflect
-                            && ((self.bxdfs[i].get_type() & BxdfType::BsdfReflection as u8)
+                            && ((arena_bxdf[self.bxdfs[i]].get_type()
+                                & BxdfType::BsdfReflection as u8)
                                 != 0_u8))
                             || (!reflect
-                                && ((self.bxdfs[i].get_type() & BxdfType::BsdfTransmission as u8)
+                                && ((arena_bxdf[self.bxdfs[i]].get_type()
+                                    & BxdfType::BsdfTransmission as u8)
                                     != 0_u8)))
                     {
-                        f += self.bxdfs[i].f(&wo, &wi);
+                        f += arena_bxdf[self.bxdfs[i]].f(&wo, &wi);
                     }
                 }
             }
@@ -419,7 +432,13 @@ impl Bsdf {
             Spectrum::default()
         }
     }
-    pub fn pdf(&self, wo_world: &Vector3f, wi_world: &Vector3f, bsdf_flags: u8) -> Float {
+    pub fn pdf(
+        &self,
+        wo_world: &Vector3f,
+        wi_world: &Vector3f,
+        bsdf_flags: u8,
+        arena_bxdf: &Vec<Bxdf>,
+    ) -> Float {
         // TODO: ProfilePhase pp(Prof::BSDFPdf);
         let n_bxdfs: usize = self.bxdfs.len();
         if n_bxdfs == 0 {
@@ -433,9 +452,9 @@ impl Bsdf {
         let mut pdf: Float = 0.0 as Float;
         let mut matching_comps: u8 = 0;
         for i in 0..n_bxdfs {
-            if self.bxdfs[i].matches_flags(bsdf_flags) {
+            if arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags) {
                 matching_comps += 1;
-                pdf += self.bxdfs[i].pdf(&wo, &wi);
+                pdf += arena_bxdf[self.bxdfs[i]].pdf(&wo, &wi);
             }
         }
         if matching_comps > 0 {
@@ -481,7 +500,7 @@ pub enum Bxdf {
     // DisSheen(DisneySheen),
     // DisClearCoat(DisneyClearCoat),
     // hair.rs
-    Hair(HairBSDF),
+    // Hair(HairBSDF),
 }
 
 impl Bxdf {
@@ -504,7 +523,7 @@ impl Bxdf {
             // Bxdf::DisRetro(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
             // Bxdf::DisSheen(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
             // Bxdf::DisClearCoat(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
-            Bxdf::Hair(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
+            // Bxdf::Hair(bxdf) => bxdf.get_type() & t == bxdf.get_type(),
         }
     }
     pub fn f(&self, wo: &Vector3f, wi: &Vector3f) -> Spectrum {
@@ -526,7 +545,7 @@ impl Bxdf {
             // Bxdf::DisRetro(bxdf) => bxdf.f(wo, wi),
             // Bxdf::DisSheen(bxdf) => bxdf.f(wo, wi),
             // Bxdf::DisClearCoat(bxdf) => bxdf.f(wo, wi),
-            Bxdf::Hair(bxdf) => bxdf.f(wo, wi),
+            // Bxdf::Hair(bxdf) => bxdf.f(wo, wi),
         }
     }
     /// Sample the BxDF for the given outgoing direction, using the given pair of uniform samples.
@@ -559,7 +578,7 @@ impl Bxdf {
             // Bxdf::DisRetro(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
             // Bxdf::DisSheen(_bxdf) => self.default_sample_f(wo, wi, u, pdf, sampled_type),
             // Bxdf::DisClearCoat(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
-            Bxdf::Hair(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
+            // Bxdf::Hair(bxdf) => bxdf.sample_f(wo, wi, u, pdf, sampled_type),
         }
     }
     fn default_sample_f(
@@ -599,7 +618,7 @@ impl Bxdf {
             // Bxdf::DisRetro(_bxdf) => self.default_pdf(wo, wi),
             // Bxdf::DisSheen(_bxdf) => self.default_pdf(wo, wi),
             // Bxdf::DisClearCoat(bxdf) => bxdf.pdf(wo, wi),
-            Bxdf::Hair(bxdf) => bxdf.pdf(wo, wi),
+            // Bxdf::Hair(bxdf) => bxdf.pdf(wo, wi),
         }
     }
     fn default_pdf(&self, wo: &Vector3f, wi: &Vector3f) -> Float {
@@ -628,7 +647,7 @@ impl Bxdf {
             // Bxdf::DisRetro(bxdf) => bxdf.get_type(),
             // Bxdf::DisSheen(bxdf) => bxdf.get_type(),
             // Bxdf::DisClearCoat(bxdf) => bxdf.get_type(),
-            Bxdf::Hair(bxdf) => bxdf.get_type(),
+            // Bxdf::Hair(bxdf) => bxdf.get_type(),
         }
     }
 }
