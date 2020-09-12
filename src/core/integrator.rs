@@ -23,7 +23,7 @@ use crate::integrators::directlighting::DirectLightingIntegrator;
 // use crate::integrators::mlt::MLTIntegrator;
 use crate::integrators::path::PathIntegrator;
 // use crate::integrators::sppm::SPPMIntegrator;
-// use crate::integrators::volpath::VolPathIntegrator;
+use crate::integrators::volpath::VolPathIntegrator;
 use crate::integrators::whitted::WhittedIntegrator;
 // see integrator.h
 
@@ -49,7 +49,7 @@ pub enum SamplerIntegrator {
     AO(AOIntegrator),
     DirectLighting(DirectLightingIntegrator),
     Path(PathIntegrator),
-    // VolPath(VolPathIntegrator),
+    VolPath(VolPathIntegrator),
     Whitted(WhittedIntegrator),
 }
 
@@ -59,7 +59,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::AO(integrator) => integrator.preprocess(scene),
             SamplerIntegrator::DirectLighting(integrator) => integrator.preprocess(scene),
             SamplerIntegrator::Path(integrator) => integrator.preprocess(scene),
-            // SamplerIntegrator::VolPath(integrator) => integrator.preprocess(scene),
+            SamplerIntegrator::VolPath(integrator) => integrator.preprocess(scene),
             SamplerIntegrator::Whitted(integrator) => integrator.preprocess(scene),
         }
     }
@@ -238,9 +238,9 @@ impl SamplerIntegrator {
             SamplerIntegrator::Path(integrator) => {
                 integrator.li(ray, scene, sampler, arena_bsdf, arena_bxdf, depth)
             }
-            // SamplerIntegrator::VolPath(integrator) => {
-            //     integrator.li(ray, scene, sampler, arena, depth)
-            // }
+            SamplerIntegrator::VolPath(integrator) => {
+                integrator.li(ray, scene, sampler, arena_bsdf, arena_bxdf, depth)
+            }
             SamplerIntegrator::Whitted(integrator) => {
                 integrator.li(ray, scene, sampler, arena_bsdf, arena_bxdf, depth)
             }
@@ -251,7 +251,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::AO(integrator) => integrator.get_camera(),
             SamplerIntegrator::DirectLighting(integrator) => integrator.get_camera(),
             SamplerIntegrator::Path(integrator) => integrator.get_camera(),
-            // SamplerIntegrator::VolPath(integrator) => integrator.get_camera(),
+            SamplerIntegrator::VolPath(integrator) => integrator.get_camera(),
             SamplerIntegrator::Whitted(integrator) => integrator.get_camera(),
         }
     }
@@ -260,7 +260,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::AO(integrator) => integrator.get_sampler(),
             SamplerIntegrator::DirectLighting(integrator) => integrator.get_sampler(),
             SamplerIntegrator::Path(integrator) => integrator.get_sampler(),
-            // SamplerIntegrator::VolPath(integrator) => integrator.get_sampler(),
+            SamplerIntegrator::VolPath(integrator) => integrator.get_sampler(),
             SamplerIntegrator::Whitted(integrator) => integrator.get_sampler(),
         }
     }
@@ -269,7 +269,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::AO(integrator) => integrator.get_pixel_bounds(),
             SamplerIntegrator::DirectLighting(integrator) => integrator.get_pixel_bounds(),
             SamplerIntegrator::Path(integrator) => integrator.get_pixel_bounds(),
-            // SamplerIntegrator::VolPath(integrator) => integrator.get_pixel_bounds(),
+            SamplerIntegrator::VolPath(integrator) => integrator.get_pixel_bounds(),
             SamplerIntegrator::Whitted(integrator) => integrator.get_pixel_bounds(),
         }
     }

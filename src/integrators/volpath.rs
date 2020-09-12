@@ -12,7 +12,7 @@ use crate::core::lightdistrib::create_light_sample_distribution;
 use crate::core::lightdistrib::LightDistribution;
 use crate::core::material::TransportMode;
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::reflection::{Bsdf, BxdfType};
+use crate::core::reflection::{Bsdf, Bxdf, BxdfType};
 use crate::core::sampler::Sampler;
 use crate::core::sampling::Distribution1D;
 use crate::core::scene::Scene;
@@ -61,7 +61,8 @@ impl VolPathIntegrator {
         r: &mut Ray,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         _depth: i32,
     ) -> Spectrum {
         // TODO: ProfilePhase p(Prof::SamplerIntegratorLi);
@@ -119,7 +120,8 @@ impl VolPathIntegrator {
                                 * uniform_sample_one_light(
                                     &mi as &dyn Interaction,
                                     scene,
-                                    arena,
+                                    arena_bsdf,
+                                    arena_bxdf,
                                     sampler,
                                     true,
                                     Some(&distrib),
@@ -143,7 +145,7 @@ impl VolPathIntegrator {
                     }
                     // compute scattering functions and skip over medium boundaries
                     let mode: TransportMode = TransportMode::Radiance;
-                    isect.compute_scattering_functions(&ray, arena, true, mode);
+                    isect.compute_scattering_functions(&ray, arena_bsdf, arena_bxdf, true, mode);
                     if let Some(ref _bsdf) = isect.bsdf {
                         // we are fine (for below)
                     } else {
@@ -161,12 +163,13 @@ impl VolPathIntegrator {
                             * uniform_sample_one_light(
                                 it,
                                 scene,
-                                arena,
+                                arena_bsdf,
+                                arena_bxdf,
                                 sampler,
                                 true,
                                 Some(&light_distrib),
                             );
-                        if let Some(ref bsdf) = isect.get_bsdf(arena) {
+                        if let Some(ref bsdf) = isect.get_bsdf(arena_bsdf) {
                             // Sample BSDF to get new path direction
                             let wo: Vector3f = -ray.d;
                             let mut wi: Vector3f = Vector3f::default();
@@ -180,6 +183,7 @@ impl VolPathIntegrator {
                                 &mut pdf,
                                 bsdf_flags,
                                 &mut sampled_type,
+                                arena_bxdf,
                             );
                             if f.is_black() || pdf == 0.0 as Float {
                                 break;
@@ -227,6 +231,8 @@ impl VolPathIntegrator {
                                         s1,
                                         s2,
                                         &mut pdf,
+                                        arena_bsdf,
+                                        arena_bxdf,
                                     );
                                     if s.is_black() || pdf == 0.0 as Float {
                                         break;
@@ -241,7 +247,8 @@ impl VolPathIntegrator {
                                             * uniform_sample_one_light(
                                                 &pi,
                                                 scene,
-                                                arena,
+                                                arena_bsdf,
+                                                arena_bxdf,
                                                 sampler,
                                                 true,
                                                 Some(&distrib),
@@ -251,7 +258,7 @@ impl VolPathIntegrator {
                                         let mut pdf: Float = 0.0 as Float;
                                         let bsdf_flags: u8 = BxdfType::BsdfAll as u8;
                                         let mut sampled_type: u8 = u8::max_value(); // != 0
-                                        if let Some(ref bsdf) = pi.get_bsdf(arena) {
+                                        if let Some(ref bsdf) = pi.get_bsdf(arena_bsdf) {
                                             let f: Spectrum = bsdf.sample_f(
                                                 &pi.common.wo,
                                                 &mut wi,
@@ -259,6 +266,7 @@ impl VolPathIntegrator {
                                                 &mut pdf,
                                                 bsdf_flags,
                                                 &mut sampled_type,
+                                                arena_bxdf,
                                             );
                                             if f.is_black() || pdf == 0.0 as Float {
                                                 break;
@@ -323,7 +331,8 @@ impl VolPathIntegrator {
                                 * uniform_sample_one_light(
                                     &mi as &dyn Interaction,
                                     scene,
-                                    arena,
+                                    arena_bsdf,
+                                    arena_bxdf,
                                     sampler,
                                     true,
                                     Some(&distrib),
