@@ -7,7 +7,7 @@ use crate::core::geometry::{Bounds2i, Normal3f, Point2f, Ray, Vector3f};
 use crate::core::interaction::{Interaction, SurfaceInteraction};
 use crate::core::material::TransportMode;
 use crate::core::pbrt::{Float, Spectrum};
-use crate::core::reflection::Bsdf;
+use crate::core::reflection::{Bsdf, Bxdf};
 use crate::core::sampler::Sampler;
 use crate::core::sampling::{
     cosine_hemisphere_pdf, cosine_sample_hemisphere, uniform_hemisphere_pdf,
@@ -51,7 +51,8 @@ impl AOIntegrator {
         r: &mut Ray,
         scene: &Scene,
         sampler: &mut Sampler,
-        arena: &mut Vec<Bsdf>,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
         _depth: i32,
     ) -> Spectrum {
         // TODO: ProfilePhase p(Prof::SamplerIntegratorLi);
@@ -67,7 +68,7 @@ impl AOIntegrator {
         let mut isect: SurfaceInteraction = SurfaceInteraction::default();
         if scene.intersect(&mut ray, &mut isect) {
             let mode: TransportMode = TransportMode::Radiance;
-            isect.compute_scattering_functions(&ray, arena, true, mode);
+            isect.compute_scattering_functions(&ray, arena_bsdf, arena_bxdf, true, mode);
             // if (!isect.bsdf) {
             //     VLOG(2) << "Skipping intersection due to null bsdf";
             //     ray = isect.SpawnRay(ray.d);

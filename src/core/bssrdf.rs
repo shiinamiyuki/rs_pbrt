@@ -419,19 +419,21 @@ impl TabulatedBssrdf {
         u1: Float,
         u2: Point2f,
         pdf: &mut Float,
+        arena_bsdf: &mut Vec<Bsdf>,
+        arena_bxdf: &mut Vec<Bxdf>,
     ) -> (Spectrum, Option<SurfaceInteraction>) {
         // ProfilePhase pp(Prof::BSSRDFSampling);
         let mut si: SurfaceInteraction = SurfaceInteraction::default();
         let sp: Spectrum = self.sample_sp(scene, u1, u2, &mut si, pdf);
         if !sp.is_black() {
             // initialize material model at sampled surface interaction
-            // si.bsdf = Some(Bsdf::new(&si, 1.0));
-            // if let Some(bsdf) = &mut si.bsdf {
-            //     bsdf.bxdfs[0] = Bxdf::Bssrdf(SeparableBssrdfAdapter::new(sc, mode, eta));
-            // }
-            // si.common.wo = Vector3f::from(si.shading.n);
-            // (sp, Some(si))
-            (sp, None)
+            let mut bsdf = Bsdf::new(&si, 1.0);
+            arena_bxdf.push(Bxdf::Bssrdf(SeparableBssrdfAdapter::new(sc, mode, eta)));
+            bsdf.add(arena_bxdf.len() - 1);
+            arena_bsdf.push(bsdf);
+            si.bsdf = Some(arena_bsdf.len() - 1);
+            si.common.wo = Vector3f::from(si.shading.n);
+            (sp, Some(si))
         } else {
             (sp, None)
         }
