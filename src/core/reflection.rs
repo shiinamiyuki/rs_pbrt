@@ -228,7 +228,8 @@ pub struct Bsdf {
     pub ng: Normal3f,
     pub ss: Vector3f,
     pub ts: Vector3f,
-    pub bxdfs: Vec<usize>,
+    pub n_bxdfs: u8,
+    pub bxdfs: [usize; 8],
 }
 
 impl Bsdf {
@@ -240,18 +241,19 @@ impl Bsdf {
             ng: si.common.n,
             ss,
             ts: nrm_cross_vec3(&si.shading.n, &ss),
-            bxdfs: Vec::with_capacity(8),
+            n_bxdfs: 0_u8,
+            bxdfs: [0, 0, 0, 0, 0, 0, 0, 0],
         }
     }
     pub fn add(&mut self, bxdf_idx: usize) {
-        assert!(self.bxdfs.len() < MAX_BXDFS as usize);
-        self.bxdfs.push(bxdf_idx);
+        assert!(self.n_bxdfs < MAX_BXDFS);
+        self.bxdfs[self.n_bxdfs as usize] = bxdf_idx;
+        self.n_bxdfs += 1;
     }
     pub fn num_components(&self, flags: u8, arena_bxdf: &Vec<Bxdf>) -> u8 {
         let mut num: u8 = 0;
-        let n_bxdfs: usize = self.bxdfs.len();
-        for i in 0..n_bxdfs {
-            if arena_bxdf[self.bxdfs[i]].matches_flags(flags) {
+        for i in 0..self.n_bxdfs {
+            if arena_bxdf[self.bxdfs[i as usize]].matches_flags(flags) {
                 num += 1;
             }
         }
@@ -288,18 +290,18 @@ impl Bsdf {
             * vec3_dot_vec3f(wo_w, &Vector3f::from(self.ng)))
             > 0.0 as Float;
         let mut f: Spectrum = Spectrum::new(0.0 as Float);
-        let n_bxdfs: usize = self.bxdfs.len();
-        for i in 0..n_bxdfs {
-            if arena_bxdf[self.bxdfs[i]].matches_flags(flags)
+        for i in 0..self.n_bxdfs {
+            if arena_bxdf[self.bxdfs[i as usize]].matches_flags(flags)
                 && ((reflect
-                    && (arena_bxdf[self.bxdfs[i]].get_type() & BxdfType::BsdfReflection as u8
+                    && (arena_bxdf[self.bxdfs[i as usize]].get_type()
+                        & BxdfType::BsdfReflection as u8
                         > 0_u8))
                     || (!reflect
-                        && (arena_bxdf[self.bxdfs[i]].get_type()
+                        && (arena_bxdf[self.bxdfs[i as usize]].get_type()
                             & BxdfType::BsdfTransmission as u8
                             > 0_u8)))
             {
-                f += arena_bxdf[self.bxdfs[i]].f(&wo, &wi);
+                f += arena_bxdf[self.bxdfs[i as usize]].f(&wo, &wi);
             }
         }
         f
@@ -330,14 +332,13 @@ impl Bsdf {
         // get _BxDF_ pointer for chosen component
         let mut bxdf: Option<&Bxdf> = None;
         let mut count: i8 = comp as i8;
-        let n_bxdfs: usize = self.bxdfs.len();
         let mut bxdf_index: usize = 0_usize;
-        for i in 0..n_bxdfs {
-            let matches: bool = arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags);
+        for i in 0..self.n_bxdfs {
+            let matches: bool = arena_bxdf[self.bxdfs[i as usize]].matches_flags(bsdf_flags);
             if matches && count == 0 {
                 count -= 1_i8;
-                bxdf = Some(&arena_bxdf[self.bxdfs[i]]);
-                bxdf_index = i;
+                bxdf = Some(&arena_bxdf[self.bxdfs[i as usize]]);
+                bxdf_index = i as usize;
                 break;
             } else {
                 // fix count
@@ -391,10 +392,12 @@ impl Bsdf {
             *wi_world = self.local_to_world(&wi);
             // compute overall PDF with all matching _BxDF_s
             if (bxdf.get_type() & BxdfType::BsdfSpecular as u8 == 0_u8) && matching_comps > 1_u8 {
-                for i in 0..n_bxdfs {
-                    // instead of self.bxdfs[i] != bxdf we compare stored index
-                    if bxdf_index != i && arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags) {
-                        *pdf += arena_bxdf[self.bxdfs[i]].pdf(&wo, &wi);
+                for i in 0..self.n_bxdfs {
+                    // instead of self.bxdfs[i as usize] != bxdf we compare stored index
+                    if bxdf_index != i as usize
+                        && arena_bxdf[self.bxdfs[i as usize]].matches_flags(bsdf_flags)
+                    {
+                        *pdf += arena_bxdf[self.bxdfs[i as usize]].pdf(&wo, &wi);
                     }
                 }
             }
@@ -407,18 +410,18 @@ impl Bsdf {
                     * vec3_dot_nrmf(wo_world, &self.ng)
                     > 0.0 as Float;
                 f = Spectrum::default();
-                for i in 0..n_bxdfs {
-                    if arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags)
+                for i in 0..self.n_bxdfs {
+                    if arena_bxdf[self.bxdfs[i as usize]].matches_flags(bsdf_flags)
                         && ((reflect
-                            && ((arena_bxdf[self.bxdfs[i]].get_type()
+                            && ((arena_bxdf[self.bxdfs[i as usize]].get_type()
                                 & BxdfType::BsdfReflection as u8)
                                 != 0_u8))
                             || (!reflect
-                                && ((arena_bxdf[self.bxdfs[i]].get_type()
+                                && ((arena_bxdf[self.bxdfs[i as usize]].get_type()
                                     & BxdfType::BsdfTransmission as u8)
                                     != 0_u8)))
                     {
-                        f += arena_bxdf[self.bxdfs[i]].f(&wo, &wi);
+                        f += arena_bxdf[self.bxdfs[i as usize]].f(&wo, &wi);
                     }
                 }
             }
@@ -452,9 +455,9 @@ impl Bsdf {
         let mut pdf: Float = 0.0 as Float;
         let mut matching_comps: u8 = 0;
         for i in 0..n_bxdfs {
-            if arena_bxdf[self.bxdfs[i]].matches_flags(bsdf_flags) {
+            if arena_bxdf[self.bxdfs[i as usize]].matches_flags(bsdf_flags) {
                 matching_comps += 1;
-                pdf += arena_bxdf[self.bxdfs[i]].pdf(&wo, &wi);
+                pdf += arena_bxdf[self.bxdfs[i as usize]].pdf(&wo, &wi);
             }
         }
         if matching_comps > 0 {
