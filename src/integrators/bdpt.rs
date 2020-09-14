@@ -188,7 +188,7 @@ impl<'a> Interaction for EndpointInteraction<'a> {
             None
         }
     }
-    fn get_bsdf<'b>(&self, arena_bsdf: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
+    fn get_bsdf<'b>(&self, _arena_bsdf: &'b Vec<Bsdf>) -> Option<&'b Bsdf> {
         None
     }
     fn get_shading_n(&self) -> Option<&Normal3f> {

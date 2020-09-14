@@ -136,19 +136,9 @@ impl TranslucentMaterial {
                 }
             }
         }
-        if !t.is_black() {
-            if use_scale {
-                arena_bxdf.push(Bxdf::LambertianTrans(LambertianTransmission::new(
-                    t * kd,
-                    Some(sc),
-                )));
-                bsdf.add(arena_bxdf.len() - 1);
-            } else {
-                arena_bxdf.push(Bxdf::LambertianTrans(LambertianTransmission::new(
-                    t * kd,
-                    None,
-                )));
-                bsdf.add(arena_bxdf.len() - 1);
+        if !ks.is_black() && (!r.is_black() || !t.is_black()) {
+            if self.remap_roughness {
+                rough = TrowbridgeReitzDistribution::roughness_to_alpha(rough);
             }
             let distrib = MicrofacetDistribution::TrowbridgeReitz(
                 TrowbridgeReitzDistribution::new(rough, rough, true),
