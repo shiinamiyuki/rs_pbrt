@@ -88,7 +88,7 @@ impl Primitive {
                 arena_bxdf,
                 mode,
                 allow_multiple_lobes,
-                self.get_material(),
+                Some(material.clone()),
                 None,
             );
         }
