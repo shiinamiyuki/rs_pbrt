@@ -68,7 +68,7 @@ impl DirectLightingIntegrator {
     }
     pub fn li(
         &self,
-        ray: &mut Ray,
+        ray: &Ray,
         scene: &Scene,
         sampler: &mut Sampler,
         arena_bsdf: &mut Vec<Bsdf>,
