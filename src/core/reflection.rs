@@ -443,8 +443,7 @@ impl Bsdf {
         arena_bxdf: &Vec<Bxdf>,
     ) -> Float {
         // TODO: ProfilePhase pp(Prof::BSDFPdf);
-        let n_bxdfs: usize = self.bxdfs.len();
-        if n_bxdfs == 0 {
+        if self.n_bxdfs == 0 {
             return 0.0 as Float;
         }
         let wo: Vector3f = self.world_to_local(wo_world);
@@ -454,7 +453,7 @@ impl Bsdf {
         }
         let mut pdf: Float = 0.0 as Float;
         let mut matching_comps: u8 = 0;
-        for i in 0..n_bxdfs {
+        for i in 0..self.n_bxdfs {
             if arena_bxdf[self.bxdfs[i as usize]].matches_flags(bsdf_flags) {
                 matching_comps += 1;
                 pdf += arena_bxdf[self.bxdfs[i as usize]].pdf(&wo, &wi);
