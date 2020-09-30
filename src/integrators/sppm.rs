@@ -102,6 +102,8 @@ impl SPPMIntegrator {
                 y: (pixel_extent.y + tile_size - 1) / tile_size,
             };
             // TODO: ProgressReporter progress(2 * nIterations, "Rendering");
+            let mut keep_bsdf: Vec<Vec<Bsdf>> = vec![Vec::new(); num_cores];
+            let mut keep_bxdf: Vec<Vec<Bxdf>> = vec![Vec::new(); num_cores];
             for iteration in pbr::PbIter::new(0..self.n_iterations) {
                 // generate SPPM visible points
                 {
@@ -120,15 +122,19 @@ impl SPPMIntegrator {
                         let bq = &block_queue;
                         let sampler = &sampler;
                         let pixels = &mut pixels;
+                        let keep_bsdf = &mut keep_bsdf;
+                        let keep_bxdf = &mut keep_bxdf;
                         crossbeam::scope(|scope| {
                             let (pixel_tx, pixel_rx) = crossbeam_channel::bounded(num_cores);
+                            let (arena_tx, arena_rx) = crossbeam_channel::bounded(num_cores);
                             // spawn worker threads
-                            for _ in 0..num_cores {
+                            for thread_index in 0..num_cores {
                                 let pixel_tx = pixel_tx.clone();
+                                let arena_tx = arena_tx.clone();
                                 scope.spawn(move |_| {
+                                    let mut arena_bsdf: Vec<Bsdf> = Vec::with_capacity(128);
+                                    let mut arena_bxdf: Vec<Bxdf> = Vec::with_capacity(128);
                                     while let Some((x, y)) = bq.next() {
-                                        let mut arena_bsdf: Vec<Bsdf> = Vec::with_capacity(128);
-                                        let mut arena_bxdf: Vec<Bxdf> = Vec::with_capacity(128);
                                         let tile: Point2i = Point2i {
                                             x: x as i32,
                                             y: y as i32,
@@ -246,6 +252,7 @@ impl SPPMIntegrator {
                                                         {
                                                             pixel.2.p = isect.common.p;
                                                             pixel.2.wo = wo;
+                                                            pixel.2.thread_index = thread_index;
                                                             pixel.2.bsdf = isect.bsdf;
                                                             pixel.2.beta = beta;
                                                             break;
@@ -311,6 +318,9 @@ impl SPPMIntegrator {
                                             .send(tile_bq)
                                             .unwrap_or_else(|_| panic!("Failed to send progress"));
                                     }
+                                    arena_tx
+                                        .send((thread_index, arena_bsdf, arena_bxdf))
+                                        .unwrap_or_else(|_| panic!("Failed to send arena"));
                                 });
                             }
                             // spawn thread to collect
@@ -322,9 +332,16 @@ impl SPPMIntegrator {
                                         pixel.ld += ld;
                                         pixel.vp.p = vp.p;
                                         pixel.vp.wo = vp.wo;
+                                        pixel.vp.thread_index = vp.thread_index;
                                         pixel.vp.bsdf = vp.bsdf;
                                         pixel.vp.beta = vp.beta;
                                     }
+                                }
+                                for _ in 0..num_cores {
+                                    let (thread_index, arena_bsdf, arena_bxdf) =
+                                        arena_rx.recv().unwrap();
+                                    keep_bsdf[thread_index] = arena_bsdf;
+                                    keep_bxdf[thread_index] = arena_bxdf;
                                 }
                             });
                         })
@@ -472,6 +489,8 @@ impl SPPMIntegrator {
                         let grid_once = &grid_once;
                         let integrator = &self;
                         let light_distr = &light_distr;
+                        let keep_bsdf = &keep_bsdf;
+                        let keep_bxdf = &keep_bxdf;
                         crossbeam::scope(|scope| {
                         let (band_tx, band_rx) = crossbeam_channel::bounded(num_cores);
                         // spawn worker threads
@@ -606,6 +625,8 @@ impl SPPMIntegrator {
                                                                         // photon
                                                                         let wi: Vector3f =
                                                                             -photon_ray.d;
+                                                                        let arena_bsdf = &keep_bsdf[pixel.vp.thread_index];
+                                                                        let arena_bxdf = &keep_bxdf[pixel.vp.thread_index];
                                                                         if let Some(ref bsdf) =
                                                                             pixel.vp.get_bsdf(&arena_bsdf)
                                                                         {
@@ -860,6 +881,7 @@ impl SPPMIntegrator {
 pub struct VisiblePoint {
     pub p: Point3f,
     pub wo: Vector3f,
+    pub thread_index: usize,
     pub bsdf: Option<usize>,
     pub beta: Spectrum,
 }
