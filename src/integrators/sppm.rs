@@ -868,6 +868,9 @@ impl SPPMIntegrator {
                     //     WriteImage("sppm_radius.png", rimg.get(), pixel_bounds, res);
                     // }
                 }
+                // reset memory arenas
+                keep_bsdf = vec![Vec::new(); num_cores];
+                keep_bxdf = vec![Vec::new(); num_cores];
             }
             // TODO: progress.Done();
         }
