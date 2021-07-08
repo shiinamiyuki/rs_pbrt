@@ -31,7 +31,10 @@ structopt = "0.3.21"
 strum = "0.21.0"
 strum_macros = "0.21.1"
 typed-arena = "2.0.1"
-
+nalgebra = {version ="0.26.2" }
+nalgebra-glm = "0.12.0"
+rand = "0.8.3"
+statrs = "0.14.0"
 [[bin]]
 name = "rs_pbrt"
 path = "src/bin/rs_pbrt.rs"

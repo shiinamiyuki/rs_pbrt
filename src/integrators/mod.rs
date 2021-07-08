@@ -66,3 +66,4 @@ pub mod path;
 pub mod sppm;
 pub mod volpath;
 pub mod whitted;
+pub mod nrc;
